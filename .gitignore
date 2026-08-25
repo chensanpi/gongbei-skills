@@ -1,0 +1,14 @@
+
+# local test credentials
+tests/.env
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# local drafts & temp files (not for repo)
+docs/
+temp/
+
+# skill runtime artifacts
+.skills-workspace/

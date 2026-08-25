@@ -1,0 +1,2 @@
+# Force Unix LF for scripts (avoid Git Bash / MSYS issues)
+*.sh text eol=lf
