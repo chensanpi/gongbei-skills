@@ -12,7 +12,7 @@
 
 ## 1. 查询资产申购单
 
-> 分页查询资产申购单据，`formType` **固定为 40**（必填），只读不创建业务单据；对接外部系统时同步业务单据。同一接口 `asset-order/page` 亦支持其它资产单据类型（见 `gongbei-procurement` 技能），本技能聚焦资产申购单。
+> 分页查询资产申购单据，`formType` **固定为 40**（必填），只读不创建业务单据；对接外部系统时同步业务单据。同一接口 `asset-order/page` 亦支持其它资产单据类型，本技能聚焦资产申购单。
 
 **接口地址**：`POST {API_HOST}/open-api/asset-order/page?appToken=<token>`
 

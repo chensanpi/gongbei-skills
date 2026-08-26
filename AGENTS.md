@@ -12,7 +12,7 @@
 
 公贝资产开放平台文档：https://doc.gongbeiyun.com/web/#/5/640
 
-> 📌 **当前进度（第二期）**：已按开放平台文档确认并实现**鉴权链路与通用约定**（API_HOST：`https://d-oapi.gongbeiyun.com`（统一使用）；`POST /open-api/auth/getAppToken` 换取 appToken，业务请求以 `?appToken=` 查询参数携带；统一响应结构 `{code,msg,requestId,data,success}`；表单字段结构接口 `get-field-structure`；自定义字段 `extFields` 赋值规则）。当前技能库聚焦四个模块：**审批&待办中心（gongbei-approval，只读已上线）**：审批实例列表、用户审批待办列表；**资产档案（gongbei-asset，只读已上线）**：仅支持 3 个只读接口（资产卡片分页查询 `assets/card/page`、资产状态列表 `assets/card/status/list`、资产操作记录 `assets/asset-operate-log/page`）；**采购单据（gongbei-procurement）**：查询接口已接入（`asset-order/page`，formType 81-85：采购申请/订单/变更/收货/付款单）；**资产申购单（gongbei-requisition，只读已上线）**：查询接口已接入（`asset-order/page`，formType 40，含申请时间/采购总数量/采购总金额/待入库总数量筛选）。其余业务模块（领用/调拨/盘点/维修/报废/报表/基础资料等）当前未纳入技能库，按需接入，接口路径与参数待官方文档公开后补充。**技能文件中不保留「第二期进度」「待第二期确认」「占位」等过程性说明**，只保留可执行信息；未公开接口在 api.md 中仅注明「请求路径随官方文档公开后补充，公开前请勿调用」。官方文档快照存放于本地 `docs/`（git 忽略，不入库），是接口补齐的权威来源。
+> 📌 **当前进度（第二期）**：已按开放平台文档确认并实现**鉴权链路与通用约定**（API_HOST：`https://d-oapi.gongbeiyun.com`（统一使用）；`POST /open-api/auth/getAppToken` 换取 appToken，业务请求以 `?appToken=` 查询参数携带；统一响应结构 `{code,msg,requestId,data,success}`；表单字段结构接口 `get-field-structure`；自定义字段 `extFields` 赋值规则）。当前技能库聚焦三个模块：**审批&待办中心（gongbei-approval，只读已上线）**：审批实例列表、用户审批待办列表；**资产档案（gongbei-asset，只读已上线）**：仅支持 3 个只读接口（资产卡片分页查询 `assets/card/page`、资产状态列表 `assets/card/status/list`、资产操作记录 `assets/asset-operate-log/page`）；**资产申购单（gongbei-requisition，只读已上线）**：查询接口已接入（`asset-order/page`，formType 40，含申请时间/采购总数量/采购总金额/待入库总数量筛选）。其余业务模块（采购/领用/调拨/盘点/维修/报废/报表/基础资料等）当前未纳入技能库，按需接入，接口路径与参数待官方文档公开后补充。**技能文件中不保留「第二期进度」「待第二期确认」「占位」等过程性说明**，只保留可执行信息；未公开接口在 api.md 中仅注明「请求路径随官方文档公开后补充，公开前请勿调用」。官方文档快照存放于本地 `docs/`（git 忽略，不入库），是接口补齐的权威来源。
 
 ---
 
@@ -39,7 +39,6 @@ gongbei-skills/
         │   ├── SKILL.md
         │   ├── scripts/gb_helper.sh
         │   └── references/api.md
-        ├── gongbei-procurement/       # 采购单据：采购申请/订单/变更/收货/付款单查询
         ├── gongbei-approval/          # 审批&待办中心：审批实例列表/用户待办（只读）
         └── gongbei-requisition/       # 资产申购单：申购单分页查询（只读）
 ```
@@ -53,7 +52,6 @@ gongbei-skills/
 | 技能名称 | 路径 | 状态 | 功能描述 |
 |---|---|---|---|
 | `gongbei-asset` | `.agents/skills/gongbei-asset/` | ✅ 已上线 | 资产档案（只读）：资产卡片查询、资产状态列表、资产操作记录 |
-| `gongbei-procurement` | `.agents/skills/gongbei-procurement/` | 🟡 部分就绪 | 采购单据（只读）：采购申请/订单/变更/收货/付款单分页查询 |
 | `gongbei-approval` | `.agents/skills/gongbei-approval/` | ✅ 已上线 | 审批&待办中心（只读）：审批实例列表、用户审批待办列表 |
 | `gongbei-requisition` | `.agents/skills/gongbei-requisition/` | ✅ 已上线 | 资产申购单（只读）：申购单分页查询（formType=40） |
 

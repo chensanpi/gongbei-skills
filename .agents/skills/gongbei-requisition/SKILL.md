@@ -26,7 +26,6 @@ description: 公贝资产开放平台·资产申购单（只读）。当用户�
 | "按申请时间/申购总数量/申购总金额/待入库数量筛申购单" | 资产申购单分页查询（申购单专属 filters：orderFields.operateTime / purchaseSumCount / purchaseSumAmount / waitStorageSumCount） |
 | "查申购单里的资产明细/分类/位置/管理员" | 资产申购单分页查询（明细 filters：lists.assetSnapshot.*，如 categoryName / locationName / adminName / brand / model / deviceSn） |
 | "新增/删除/更新申购单"、"申购统计报表" | 本技能不提供，请引导用户在公贝系统中处理 |
-| 其它单据类型（formType 81-85 等，属 `gongbei-procurement` 范围） | `gongbei-procurement` |
 | 查审批状态/待办（申购单关联审批） | `gongbei-approval`（审批实例含关联单据编码 linkCode） |
 
 ## 工作流程（每次执行前）

@@ -8,7 +8,7 @@ Let your AI Agent operate the **Gongbei Asset Open Platform (公贝资产开放�
 
 Built on the [Anthropic skills spec](https://github.com/anthropics/skills), with **zero dependencies — only `curl`** for HTTP requests, no Python, no SDK, nothing extra to install. After installation your agent automatically understands when to call Gongbei APIs, which endpoint to use, and how to fill in the parameters — including **automatic config management** and error handling.
 
-> 📌 **Implemented capabilities**: Built on the official docs (https://doc.gongbeiyun.com/web/#/5/640), the **auth flow and common conventions** are implemented: API_HOST (unified `https://d-oapi.gongbeiyun.com`), `getAppToken` → `appToken` (sent as `?appToken=` query param), unified response envelope, form-field structure query, and custom field (`extFields`) assignment rules. The skill library provides four modules: **Approval & Todo Center (gongbei-approval, read-only)**: approval instance list, user approval todo list; **Asset registry (gongbei-asset, read-only)**: asset card pagination query, asset status list, asset operation log; **Procurement documents (gongbei-procurement)**: purchase request/order/change/receipt/payment document pagination query; **Asset requisition (gongbei-requisition, read-only)**: requisition document pagination query (formType=40, filter by apply time / total purchase qty / total purchase amount / pending-storage qty). Other business modules (transfer/stocktake/repair/scrap/reports/master data, etc.) are not yet in the skill library — they will be added on demand as their endpoints are published.
+> 📌 **Implemented capabilities**: Built on the official docs (https://doc.gongbeiyun.com/web/#/5/640), the **auth flow and common conventions** are implemented: API_HOST (unified `https://d-oapi.gongbeiyun.com`), `getAppToken` → `appToken` (sent as `?appToken=` query param), unified response envelope, form-field structure query, and custom field (`extFields`) assignment rules. The skill library provides three modules: **Approval & Todo Center (gongbei-approval, read-only)**: approval instance list, user approval todo list; **Asset registry (gongbei-asset, read-only)**: asset card pagination query, asset status list, asset operation log; **Asset requisition (gongbei-requisition, read-only)**: requisition document pagination query (formType=40, filter by apply time / total purchase qty / total purchase amount / pending-storage qty). Other business modules (procurement/transfer/stocktake/repair/scrap/reports/master data, etc.) are not yet in the skill library — they will be added on demand as their endpoints are published.
 
 ## Why use this
 
@@ -31,7 +31,6 @@ Every task execution loads skill files into the agent's context window — **the
 | Skill | Status | Description |
 |---|---|---|
 | [gongbei-asset](#gongbei-asset--asset-registry) | ✅ Live | Asset registry (read-only): asset card query, status list, operation log |
-| [gongbei-procurement](#gongbei-procurement--procurement-documents) | 🟡 Partially ready | Procurement documents (read-only): purchase request/order/change/receipt/payment pagination query |
 | [gongbei-approval](#gongbei-approval--approval--todo-center) | ✅ Live | Approval & Todo Center (read-only): approval instance list, user todo list |
 | [gongbei-requisition](#gongbei-requisition--asset-requisition) | ✅ Live | Asset requisition (read-only): requisition document pagination query (formType=40) |
 
@@ -67,7 +66,6 @@ On first run, the agent checks `~/.gongbei-skills/config`, asks for anything mis
 ```
 "Show me the in-use assets of the Finance department"
 "Show the operation log of asset GB-00040"
-"What purchase requests are there? Summarize by status"
 "Any recent asset requisitions?"
 "What approval todos do I have?"
 ```
@@ -92,22 +90,6 @@ npx skills add https://github.com/chensanpi/gongbei-skills.git --skill gongbei-a
 > This skill is **read-only**: only the three query interfaces above; asset detail is available by filtering the card query on `id`/`code.keyword`; creating/updating/deleting assets and asset categories are handled in the Gongbei console.
 
 > Example: "How many in-use laptops does the R&D department have?" → Agent calls the asset card query, filters by category/status/department, returns stats.
-
-### gongbei-procurement — Procurement Documents
-
-**Install**
-```bash
-npx skills add https://github.com/chensanpi/gongbei-skills.git --skill gongbei-procurement
-```
-
-| Capability | Description |
-|---|---|
-| Query procurement documents ✅ | Paginated; `formType` required (81 purchase request / 82 purchase order / 83 purchase change / 84 purchase receipt / 85 purchase payment), filter by code/status/initiator/department/linked order/approval instance |
-| Document progress | Order header returns request/billing/arrival/storage/dispatch counts & amounts (`orderFields`); line items carry asset archive, qty & amount |
-
-> This skill is **read-only**: only procurement document queries; creating/updating/deleting procurement documents and procurement statistics are handled in the Gongbei console.
-
-> Example: "Show me May's purchase requests" → Agent queries with formType=81 + time range and summarizes statuses.
 
 ### gongbei-approval — Approval & Todo Center
 
@@ -155,7 +137,6 @@ tests/
 │   │   └── gb_helper.sh     # Gongbei open platform helper (config + token)
 │   └── references/
 │       └── api.md           # API reference (auth/common conventions confirmed; business endpoints pending)
-├── gongbei-procurement/     # Procurement documents
 ├── gongbei-approval/        # Approval & Todo Center
 └── gongbei-requisition/     # Asset requisition
 ```
