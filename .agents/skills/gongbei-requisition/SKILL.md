@@ -15,6 +15,7 @@ description: 公贝资产开放平台·资产申购单（只读）。当用户�
 - **单据状态（orderStatus）**：`100` 进行中 / `200` 已拒绝 / `300` 已撤销 / `400` 已完结 / `600` 待提交。
 - **单据头（orderFields）**：申购单单据头含申请时间 `operateTime`、申请人 `operateUserId/operateUserName`、关联单据 `relatedOrderId`；申购单专属汇总字段：申购总数量 `purchaseSumCount`、申购总金额 `purchaseSumAmount`、待入库总数量 `waitStorageSumCount`（均可作为筛选条件）。
 - **单据明细（lists）**：每行含资产快照 `assetSnapshot`（资产 `id/code/name/brand/model/deviceSn/oldCode`、分类 `categoryId/categoryName`、位置 `locationId/locationName`、管理员 `adminId/adminName`、所属公司 `companyId/companyName`、入库时间 `storageTime`）。
+- **扩展字段（extFields）**：申购单自定义扩展字段，**查询与返回结果映射通用**：具体说明 `extFields.text029`、资产分类 `extFields.text034`、申请原因 `extFields.text042`、部门现有资产 `extFields.text046`（表格）；查询时作 filters 字段（如 `{field:"extFields.text042",compare:"LK",value:"报废新购"}`），返回时读响应 `extFields` 对应键。
 - **只读范围**：本技能仅提供资产申购单查询；新增/删除/更新申购单及申购统计等操作不在本技能范围，请引导用户在公贝系统中处理。
 
 ## 场景路由（先分类再调 API）
@@ -24,7 +25,8 @@ description: 公贝资产开放平台·资产申购单（只读）。当用户�
 | "有哪些申购单"、"查申购单"、"申购到哪一步了" | 资产申购单分页查询（`formType=40` + filters 筛选） |
 | "按单据编码/状态/发起人/关联单号查申购单" | 资产申购单分页查询（通用 filters：code / orderStatus / startOrg* / startUser* / linkOrderCode / remark / processInstanceId） |
 | "按申请时间/申购总数量/申购总金额/待入库数量筛申购单" | 资产申购单分页查询（申购单专属 filters：orderFields.operateTime / purchaseSumCount / purchaseSumAmount / waitStorageSumCount） |
-| "查申购单里的资产明细/分类/位置/管理员" | 资产申购单分页查询（明细 filters：lists.assetSnapshot.*，如 categoryName / locationName / adminName / brand / model / deviceSn） |
+| "按申请原因/具体说明/资产分类等扩展字段筛申购单" | 资产申购单分页查询（扩展字段 filters：extFields.text042 等，如 `{field:"extFields.text042",compare:"LK",value:"报废新购"}`） |
+| "查申购单里的资产明细/分类/位置/管理员" | 资产申购单分页查询（明细字段从**返回结果** `lists.assetSnapshot.*` 读取，字段参考响应示例与关键字段说明；不提供明细级筛选） |
 | "新增/删除/更新申购单"、"申购统计报表" | 本技能不提供，请引导用户在公贝系统中处理 |
 | 查审批状态/待办（申购单关联审批） | `gongbei-approval`（审批实例含关联单据编码 linkCode） |
 

@@ -47,26 +47,29 @@
 | `orderFields.purchaseSumAmount` | double | 99.81 | 申购总金额 |
 | `orderFields.waitStorageSumCount` | long | 1 | 待入库总数量 |
 
-### 单据明细 filters 查询字段（lists.assetSnapshot.*）
+### 扩展字段映射（查询与返回结果通用）
 
-| field | 类型 | value 示例 | 说明 |
-|---|---|---|---|
-| `lists.assetSnapshot.id` | long | 134334333232 | 资产 ID |
-| `lists.assetSnapshot.categoryId` | long | 134334333232 | 资产分类 ID（参照：分类树查询） |
-| `lists.assetSnapshot.categoryName` | String | 笔记本 | 资产分类名称 |
-| `lists.assetSnapshot.locationId` | long | 134334333232 | 位置 id（参照：位置树查询） |
-| `lists.assetSnapshot.locationName` | String | 上海 | 位置名称 |
-| `lists.assetSnapshot.adminId` | long | 134334333232 | 管理员 ID（参照：员工分页查询） |
-| `lists.assetSnapshot.adminName` | String | 上海 | 管理员名称 |
-| `lists.assetSnapshot.companyId` | long | 134334333232 | 所属公司 id（参照：公司列表查询） |
-| `lists.assetSnapshot.companyName` | String | 上海 | 所属公司名称 |
-| `lists.assetSnapshot.storageTime` | long | 134334333232 | 入库时间（时间戳） |
-| `lists.assetSnapshot.code` | String | GB-0001 | 资产编码 |
-| `lists.assetSnapshot.oldCode` | String | GB-0001 | 资产编码（旧） |
-| `lists.assetSnapshot.name` | String | 电脑 | 资产名称 |
-| `lists.assetSnapshot.brand` | String | 苹果 | 品牌 |
-| `lists.assetSnapshot.model` | String | x-01 | 型号 |
-| `lists.assetSnapshot.deviceSn` | String | 1000001-2002 | 序列号 |
+申购单自定义扩展字段，**既可用于 filters 查询，也可用于返回结果映射**（响应 `extFields` 对象中按相同键取对应值）：
+
+| 扩展字段 | 含义 | 说明 |
+|---|---|---|
+| `extFields.text029` | 具体说明 | 普通文本 |
+| `extFields.text034` | 资产分类 | 普通文本 |
+| `extFields.text042` | 申请原因 | 普通文本 |
+| `extFields.text046` | 部门现有资产 | 表格 |
+
+查询示例（按申请原因筛申购单）：
+
+```json
+{
+  "size": 10,
+  "current": 1,
+  "formType": 40,
+  "filters": [
+    { "field": "extFields.text042", "compare": "LK", "value": "报废新购" }
+  ]
+}
+```
 
 ### compare 比较符
 
@@ -144,6 +147,12 @@
           "relatedOrderId": "1570672540244905986",
           "formType": 1
         },
+        "extFields": {
+          "text029": "具体说明示例",
+          "text034": "电脑类",
+          "text042": "报废新购",
+          "text046": []
+        },
         "lists": []
       }
     ]
@@ -165,6 +174,7 @@
 | `visibleUserIds` | 可见人员范围 |
 | `orderFields`（单据头） | 申请时间 `operateTime`、申请人 `operateUserId/operateUserName`、关联单据 `relatedOrderId/formType`；申购单汇总（可筛选）：申购总数量 `purchaseSumCount`、申购总金额 `purchaseSumAmount`、待入库总数量 `waitStorageSumCount` |
 | `lists`（单据明细） | 每行含资产快照 `assetSnapshot`：资产 `id/code/name/brand/model/deviceSn/oldCode`、分类 `categoryId/categoryName`、位置 `locationId/locationName`、管理员 `adminId/adminName`、所属公司 `companyId/companyName`、入库时间 `storageTime` |
+| `extFields`（扩展字段） | 自定义扩展字段值（映射见「扩展字段映射」）：具体说明 `text029`、资产分类 `text034`、申请原因 `text042`、部门现有资产 `text046`（表格类型） |
 
 ---
 
