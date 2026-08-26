@@ -8,7 +8,7 @@
 
 基于 [Anthropic skills 规范](https://github.com/anthropics/skills) 构建，**仅依赖 `curl`**，无需安装 Python、SDK 或任何第三方库。安装后 Agent 即可理解"什么时候该调公贝 API、该调哪个、参数怎么填"，并**自动管理配置**、错误处理。
 
-> 📌 **已实现能力**：基于官方文档（https://doc.gongbeiyun.com/web/#/5/640）实现**鉴权链路**与**通用约定**：API_HOST（统一 `https://d-oapi.gongbeiyun.com`）、`getAppToken` 换取 appToken（`?appToken=` 查询参数携带）、统一响应结构、表单字段结构查询与自定义字段（extFields）赋值规则。技能库提供三个模块：**审批&待办中心（gongbei-approval，只读）**：审批实例列表、用户审批待办列表；**资产档案（gongbei-asset，只读）**：资产卡片分页查询、资产状态列表、资产操作记录；**采购单据（gongbei-procurement）**：采购申请/订单/变更/收货/付款单分页查询。其余业务模块（领用/调拨/盘点/维修/报废/报表/基础资料等）当前未纳入技能库，按需接入（接口路径与参数待官方文档公开后补充）。
+> 📌 **已实现能力**：基于官方文档（https://doc.gongbeiyun.com/web/#/5/640）实现**鉴权链路**与**通用约定**：API_HOST（统一 `https://d-oapi.gongbeiyun.com`）、`getAppToken` 换取 appToken（`?appToken=` 查询参数携带）、统一响应结构、表单字段结构查询与自定义字段（extFields）赋值规则。技能库提供四个模块：**审批&待办中心（gongbei-approval，只读）**：审批实例列表、用户审批待办列表；**资产档案（gongbei-asset，只读）**：资产卡片分页查询、资产状态列表、资产操作记录；**采购单据（gongbei-procurement）**：采购申请/订单/变更/收货/付款单分页查询；**资产申购单（gongbei-requisition，只读）**：申购单分页查询（formType=40，含申请时间/采购总数量/采购总金额/待入库总数量筛选）。其余业务模块（领用/调拨/盘点/维修/报废/报表/基础资料等）当前未纳入技能库，按需接入（接口路径与参数待官方文档公开后补充）。
 
 ## 为什么用这个
 
@@ -33,6 +33,7 @@ Agent 每次执行任务都需要将技能文件装入上下文，**skill 文件
 | [gongbei-asset](#gongbei-asset--资产档案) | ✅ 已上线 | 资产档案（只读）：资产卡片查询、资产状态列表、资产操作记录 |
 | [gongbei-procurement](#gongbei-procurement--采购单据) | 🟡 部分就绪 | 采购单据（只读）：采购申请/订单/变更/收货/付款单分页查询 |
 | [gongbei-approval](#gongbei-approval--审批待办中心) | ✅ 已上线 | 审批&待办中心（只读）：审批实例列表、用户审批待办列表 |
+| [gongbei-requisition](#gongbei-requisition--资产申购单) | ✅ 已上线 | 资产申购单（只读）：申购单分页查询（formType=40） |
 
 ## 快速开始
 
@@ -67,6 +68,7 @@ npx skills add https://github.com/chensanpi/gongbei-skills.git --skill '*' -a cl
 "查一下财务部有哪些在用资产"
 "查 GB-00040 这台资产的操作记录"
 "有哪些采购申请单？按状态汇总一下"
+"最近有哪些资产申购单？"
 "我有哪些待办审批？"
 ```
 
@@ -123,6 +125,21 @@ npx skills add https://github.com/chensanpi/gongbei-skills.git --skill gongbei-a
 
 > 示例："我的待办有哪些？" → Agent 按当前用户查待办列表并汇总；"最近有哪些审批？" → Agent 查审批实例列表并按状态汇总。
 
+### gongbei-requisition — 资产申购单
+
+**安装**
+```bash
+npx skills add https://github.com/chensanpi/gongbei-skills.git --skill gongbei-requisition
+```
+
+| 能力 | 说明 |
+|---|---|
+| 查询资产申购单 ✅ | 分页查询（formType=40），通用筛选（编码/状态/发起人/部门/关联单号/审批实例）+ 申购单专属筛选（申请时间/采购总数量/采购总金额/待入库总数量），明细含资产快照（分类/位置/管理员/品牌/型号/序列号） |
+
+> 本技能**只读**：仅提供申购单查询；新增/删除/更新申购单及申购统计请引导用户在公贝系统中处理。
+
+> 示例："查一下最近 3 个月的资产申购单" → Agent 按 formType=40 + orderFields.operateTime 时间范围查询并汇总状态。
+
 ---
 
 ## 项目结构
@@ -139,7 +156,8 @@ tests/
 │   └── references/
 │       └── api.md           # API 参考（鉴权/通用约定已确认，业务接口待补齐）
 ├── gongbei-procurement/     # 采购单据
-└── gongbei-approval/        # 审批&待办中心
+├── gongbei-approval/        # 审批&待办中心
+└── gongbei-requisition/     # 资产申购单
 ```
 
 ## 贡献

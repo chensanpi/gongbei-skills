@@ -12,3 +12,6 @@ temp/
 
 # skill runtime artifacts
 .skills-workspace/
+
+# npx skills 打包产物
+*.zip

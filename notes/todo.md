@@ -1,7 +1,7 @@
 # 第二期待办清单（API 补齐检查项）
 
 > 第一期（MVP）已搭好框架。第二期已按官方文档快照（本地 `docs/`）完成：
-> **鉴权链路与通用约定**（API_HOST、getAppToken、统一响应、字段结构、extFields）、**审批&待办中心 2 个只读接口**（gongbei-approval 已上线：审批实例列表、用户审批待办列表）、**资产档案 3 个只读接口**（gongbei-asset 已上线，仅支持：资产卡片分页查询 `assets/card/page`、资产状态列表 `assets/card/status/list`、资产操作记录 `assets/asset-operate-log/page`）、**采购单据查询接口**（gongbei-procurement 已接入：`asset-order/page`，formType 81-85 采购申请/订单/变更/收货/付款单）。当前技能库仅保留审批/资产/采购三个模块；其余业务模块（领用/调拨/盘点/维修/报废/报表/基础资料）按需接入，接口路径与参数待官方文档公开后补齐。
+> **鉴权链路与通用约定**（API_HOST、getAppToken、统一响应、字段结构、extFields）、**审批&待办中心 2 个只读接口**（gongbei-approval 已上线：审批实例列表、用户审批待办列表）、**资产档案 3 个只读接口**（gongbei-asset 已上线，仅支持：资产卡片分页查询 `assets/card/page`、资产状态列表 `assets/card/status/list`、资产操作记录 `assets/asset-operate-log/page`）、**采购单据查询接口**（gongbei-procurement 已接入：`asset-order/page`，formType 81-85 采购申请/订单/变更/收货/付款单）。当前技能库包含审批/资产/采购/申购四个模块；其余业务模块（领用/调拨/盘点/维修/报废/报表/基础资料）按需接入，接口路径与参数待官方文档公开后补齐。
 
 ## 0. 文档核对 ✅
 
@@ -30,11 +30,13 @@
 - [x] `gongbei-asset` 收敛为只读：移除「资产详情/新增/修改/删除/分类」占位章节与「extFields 赋值」章节（extFields 赋值规则见 `docs/表单字段编码查询与赋值说明`，随写操作接口接入时再引入）
 - [x] **`gongbei-approval`（新增技能，✅ 已上线，只读）**：审批实例列表、用户审批待办列表（2 个只读接口：`process-instance/page`、`process-record/task/page`；详情/已办/抄送/效率诊断及写操作不提供）
 - [x] **`gongbei-procurement`（新增技能，只读）**：查询采购单据 `asset-order/page`（formType 81-85：采购申请/订单/变更/收货/付款单；通用筛选 code/orderStatus/发起人/部门/关联单号/审批实例；compare 比较符 EQ/LK/IN/BT 等）
+- [x] **`gongbei-requisition`（新增技能，只读）**：查询资产申购单 `asset-order/page`（formType=40；通用筛选 code/orderStatus/startOrg*/startUser*/linkOrderCode/remark/processInstanceId + 申购单专属筛选 orderFields.operateTime/purchaseSumCount/purchaseSumAmount/waitStorageSumCount；明细资产快照 lists.assetSnapshot.*）
 
 仍待官方文档公开后补齐（路径/参数/响应/错误码/权限；其余业务模块按需接入）：
 
 - [ ] `gongbei-asset`：新增/修改/删除/分类（当前技能定义为只读 3 个查询接口；如需写操作由用户另行确认范围）
 - [ ] `gongbei-procurement`：采购单据新增/删除/更新/统计（当前仅查询）
+- [ ] `gongbei-requisition`：申购单新增/删除/更新/统计（当前仅查询）
 - [ ] 各接口错误码表（业务码）与所需应用权限范围
 
 每个接口补齐时须包含：方法（均为 POST JSON）、真实路径、请求参数表、请求/响应 JSON 示例、错误码表、所需权限。
