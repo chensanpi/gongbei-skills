@@ -83,7 +83,7 @@ npx skills add https://github.com/chensanpi/gongbei-skills.git --skill gongbei-a
 
 | Capability | Description |
 |---|---|
-| Query asset cards ✅ | Paginated + sorting + multi-condition filters (code/name/category/storage time/status/user/admin, etc.), full fields; `status` excludes disposed(40) by default |
+| Query asset cards ✅ | Paginated + sorting + multi-condition filters (code/category/storage time/user/admin, etc.) + special params (`keyword` global fuzzy search, `statusName` asset status, `extFields.text009` asset name, `extFields.text001` financial attribute), full fields |
 | Query asset operation log ✅ | Paginated operation history (operator/type/change content/linked document), filter by asset ID |
 | Asset status list ✅ | Full status enum (10 idle / 20 in use / 30 borrowed / 40 disposed / 50 reported lost / in-process states, etc.); source of `status` filter values in card query |
 

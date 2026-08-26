@@ -20,6 +20,7 @@
 |---|---|---|---|---|
 | `current` | Body | ⬜ | int | 页面值，默认 1 |
 | `size` | Body | ⬜ | int | 页面大小，默认 10，最大 1000 |
+| `keyword` | Body | ⬜ | string | 关键字检索（普通文本输入）：**全局模糊检索字段**，没有合适的查询字段时使用该参数传值；涉及资产所属门店、部门时可直接用该字段模糊检索 |
 | `sorts` | Body | ⬜ | array | 排序字段集合，默认 `id desc`；元素 `{field, direction}`，`direction` 为 `asc` 正序 / `desc` 倒序 |
 | `filters` | Body | ⬜ | array | 条件字段集合，元素 `{field, compare, value}`，见下方筛选字段与 compare 支持列表 |
 
@@ -30,13 +31,23 @@
 | `id` | `in` | int[] | 资产 ID，值为数组 |
 | `code` | `lk` | string | 资产编码模糊搜索 |
 | `code.keyword` | `in` | string[] | 资产编码精确查询 |
-| `name` | `lk` | string | 资产名称模糊搜索 |
 | `categoryId` | `in` | int[] | 分类 ID，值为数组 |
 | `categoryName` | `lk` | string | 分类名称模糊搜索 |
 | `storageTime` | `bt` | long[2] | 入库时间范围查询（毫秒时间戳，起止两值） |
-| `status` | `ni` | int[] | 资产状态，**默认不查询已处置状态 40**；需要同时查询已处置时可传 `ni [0]` |
+| `statusName` | `lk` | string | 资产状态描述（普通文本输入），如 空闲/在用/已处置 |
+| `extFields.text009` | `lk` | string | 资产名称（普通文本输入）；替代原 `name` 筛选 |
+| `extFields.text001` | `lk` | string | 财务属性：财务资产 / 非财务资产 / 临时通用类别 |
 
 > 其他字段可参照下方响应中的字段按需筛选，方式类似。
+
+### 特殊参数映射
+
+| 关键字/参数 | 说明 |
+|---|---|
+| 关键字检索 `keyword` | 普通文本输入；**全局模糊检索字段**，没有合适的查询字段时使用该参数传值；涉及资产所属门店、部门时可直接用该字段模糊检索 |
+| 财务属性 `extFields.text001` | 财务资产 / 非财务资产 / 临时通用类别 |
+| 资产名称 `extFields.text009` | 普通文本输入 |
+| 资产状态 `statusName` | 普通文本输入 |
 
 ### 人员属性筛选
 
@@ -52,7 +63,7 @@
 | compare | 描述 | 示例 |
 |---|---|---|
 | `eq` | 等于 | `{"field":"id","compare":"eq","value":1}` |
-| `lk` | 相似（模糊） | `{"field":"name","compare":"lk","value":"张三"}` |
+| `lk` | 相似（模糊） | `{"field":"remark","compare":"lk","value":"测试"}` |
 | `in` | 在…中 | `{"field":"id","compare":"in","value":[1,2,3]}` |
 | `ni` | 不在…中 | `{"field":"id","compare":"ni","value":[1,2,3]}` |
 | `bt` | 在…之间 | `{"field":"id","compare":"bt","value":[1,5]}` |
@@ -67,13 +78,9 @@
 {
   "current": 1,
   "size": 10,
-  "sorts": [
-    { "field": "id", "direction": "desc" }
-  ],
+  "keyword": "高德置地店",
   "filters": [
-    { "field": "status", "compare": "ni", "value": [40] },
-    { "field": "name", "compare": "lk", "value": "笔记本" },
-    { "field": "useUser.thirdUserId", "compare": "in", "value": ["022302282526519"] }
+    { "field": "extFields.text001", "compare": "lk", "value": "非财务资产" }
   ]
 }
 ```
@@ -329,7 +336,7 @@
 }
 ```
 
-> 第 1 节「查询资产卡片」中 `status` 筛选的枚举值取自本接口；已处置为 40。
+> 第 1 节「查询资产卡片」中 `statusName`（资产状态文本）筛选的值取自本接口的状态描述（如 空闲/在用/已处置）。
 
 ---
 
