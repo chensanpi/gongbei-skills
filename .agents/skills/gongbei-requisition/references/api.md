@@ -6,6 +6,7 @@
 > - 鉴权：`POST {API_HOST}/open-api/auth/getAppToken`，Body `{"appKey":"...","appSecret":"..."}` → 返回 `data.appToken`（有效期以 `data.expireTime` 毫秒时间戳为准）。用 `gb_helper.sh --token` 获取并缓存
 > - 业务请求携带令牌：查询参数 `?appToken=<token>`
 > - 统一响应结构：`{"code":"200","msg":"成功","requestId":"...","data":{...},"success":true}`；`code` 非 `"200"` 或 `success=false` 即失败，按 `msg` 提示
+> - **资产分类（应用范围）**：本应用经 `GONGBEI_APP_TYPE`（加密后的资产分类编码，逗号分隔多个，**敏感且必填**）限定资产分类范围；执行查询前先 `bash scripts/gb_helper.sh --categories` 静默转换出真实分类名称（对照本地清单 `~/.gongbei-skills/asset-category-map`，清单内容不输出）。**申购单查询**用转换结果构造扩展字段 `extFields.text034`（资产分类）过滤条件（compare 取 `IN`，多个分类名逗号分隔，见下方请求示例），返回后按 `lists.assetSnapshot.categoryName` 二次核对分类。
 > - 时间均用**毫秒时间戳**；文档示例中的 `//` 注释实际请求时必须移除，否则 JSON 无法解析
 
 ---
@@ -58,18 +59,6 @@
 | `extFields.text042` | 申请原因 | 普通文本 |
 | `extFields.text046` | 部门现有资产 | 表格 |
 
-查询示例（按申请原因筛申购单）：
-
-```json
-{
-  "size": 10,
-  "current": 1,
-  "formType": 40,
-  "filters": [
-    { "field": "extFields.text042", "compare": "LK", "value": "报废新购" }
-  ]
-}
-```
 
 ### compare 比较符
 
@@ -93,15 +82,15 @@
 
 ### 请求示例
 
+查询示例（按资产分类筛申购单）：
+
 ```json
 {
   "size": 10,
   "current": 1,
-  "keyword": "",
   "formType": 40,
   "filters": [
-    { "field": "code", "compare": "LK", "value": "ZCRK202209160001" },
-    { "field": "orderFields.purchaseSumAmount", "compare": "GT", "value": 100 }
+    { "field": "extFields.text034", "compare": "IN", "value": "工程设备,工程设施" }
   ]
 }
 ```
