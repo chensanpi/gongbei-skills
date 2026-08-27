@@ -41,6 +41,7 @@ Every task execution loads skill files into the agent's context window — **the
 1. Create an app on the [Gongbei Asset Open Platform](https://doc.gongbeiyun.com/web/#/5/640): right-click the homepage logo → open the "开放平台" tab → create an app → get its `appKey` and `appSecret`
 2. API_HOST is fixed at `https://d-oapi.gongbeiyun.com` — no configuration needed (overridable via the `GONGBEI_BASE_URL` env var)
 3. Prepare your app's `appKey` and `appSecret` — the agent will walk you through the setup
+4. Prepare `GONGBEI_APP_TYPE`: encrypted asset category codes (comma-separated, **sensitive & required**), and maintain the local list at `~/.gongbei-skills/asset-category-map` (one `encrypted-code=category-name` per line); this sensitive mapping file is read silently by the helper and never appears in any output
 
 ### Install a Skill
 
@@ -61,7 +62,7 @@ npx skills add https://github.com/chensanpi/gongbei-skills.git --skill '*' -a cl
 
 ### Just Talk
 
-On first run, the agent checks `~/.gongbei-skills/config`, asks for anything missing in one go, and saves it. Then:
+On first run, the agent checks `~/.gongbei-skills/config` (including `GONGBEI_APP_TYPE`), asks for anything missing in one go, and saves it. Then:
 
 ```
 "Show me the in-use assets of the Finance department"

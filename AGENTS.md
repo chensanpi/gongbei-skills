@@ -101,6 +101,9 @@ description: <触发描述，必须包含中文关键词，覆盖用户可能说
 - 所有技能统一使用 `gb_helper.sh` 管理配置与 Token，**不要在各技能内重复实现**
 - 修改 `scripts/common/gb_helper.sh` 后，须同步复制到各技能目录（`scripts/gb_helper.sh`）与 `tests/` 引用处
 - 凭证禁止硬编码；敏感项输出必须脱敏（前 4 位 + `****`）
+- **全局配置 `GONGBEI_APP_TYPE`**（与 `GONGBEI_APP_KEY` 同级，存于 `~/.gongbei-skills/config`）：加密后的资产分类编码，逗号分隔多个，**敏感且必填**，输出时脱敏
+- **资产分类清单（本地敏感映射文件）**：默认 `~/.gongbei-skills/asset-category-map`（可用 `GONGBEI_CATEGORY_MAP` 覆盖），每行 `加密编码=分类名称`；清单内容**绝不**输出到提示词、输出信息或思考过程，仅由 `gb_helper.sh --categories` 静默读取并映射
+- **技能执行流程统一为**：识别任务 → 校验配置（含 `GONGBEI_APP_TYPE`）→ 收集缺失项 → 获取 Token → `gb_helper.sh --categories` 后台静默获取转换后的真实资产分类名称 → 执行 API（接口有分类过滤字段则作为过滤条件；无则对结果做二次过滤）
 
 ### 6. 安装约定
 

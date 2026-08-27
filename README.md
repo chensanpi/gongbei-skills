@@ -41,6 +41,7 @@ Agent 每次执行任务都需要将技能文件装入上下文，**skill 文件
 1. 在[公贝资产开放平台](https://doc.gongbeiyun.com/web/#/5/640)创建应用：首页 Logo 右键进入「开放平台」页签 → 新建应用 → 获取应用的 `appKey`、`appSecret`
 2. API_HOST 统一为 `https://d-oapi.gongbeiyun.com`，无需配置（如需覆盖可用 `GONGBEI_BASE_URL` 环境变量）
 3. 准备好应用的 `appKey`、`appSecret`（Agent 会引导你完成配置）
+4. 准备 `GONGBEI_APP_TYPE`：加密后的资产分类编码（逗号分隔多个，**敏感且必填**），并在本地 `~/.gongbei-skills/asset-category-map` 维护清单（每行 `加密编码=分类名称`）；该清单为本地敏感映射，由脚本静默读取转换，不会出现在任何输出中
 
 ### 安装技能
 
@@ -61,7 +62,7 @@ npx skills add https://github.com/chensanpi/gongbei-skills.git --skill '*' -a cl
 
 ### 开口说话
 
-安装后，Agent 会在首次运行时检查 `~/.gongbei-skills/config`，缺什么一次性问清楚，自动写入。之后直接对话：
+安装后，Agent 会在首次运行时检查 `~/.gongbei-skills/config`（含 `GONGBEI_APP_TYPE`），缺什么一次性问清楚，自动写入。之后直接对话：
 
 ```
 "查一下财务部有哪些在用资产"
