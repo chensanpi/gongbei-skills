@@ -20,8 +20,19 @@ CONFIG="${GONGBEI_CONFIG:-$HOME/.gongbei-skills/config}"
 BASE_URL="${GONGBEI_BASE_URL:-https://d-oapi.gongbeiyun.com}"
 # 获取 appToken 的鉴权接口路径（官方文档确认）
 TOKEN_PATH="/open-api/auth/getAppToken"
-# 资产分类清单（本地敏感映射文件，可用 GONGBEI_CATEGORY_MAP 覆盖；每行: 加密编码=分类名称）
-CATEGORY_MAP="${GONGBEI_CATEGORY_MAP:-$HOME/.gongbei-skills/asset-category-map}"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 内置资产分类清单（加密编码=分类名称，敏感信息）
+# 说明：内容为敏感映射，绝不输出到提示词/输出/思考过程；仅由 --categories 静默读取转换。
+# ─────────────────────────────────────────────────────────────────────────────
+CATEGORY_LIST="Ak=办公设备
+GH=工程设备
+FS=工程设施
+PO=台面设备
+QW=信息设备
+OO=租赁设备
+MK=工程耗材
+CL="
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 帮助信息
@@ -45,9 +56,8 @@ Token 管理：
 
 资产分类（静默转换，所有公贝技能通用）：
   --categories         读取 GONGBEI_APP_TYPE（加密后的资产分类编码，逗号分隔多个），
-                       对照本地资产分类清单（GONGBEI_CATEGORY_MAP，默认
-                       ~/.gongbei-skills/asset-category-map，每行: 加密编码=分类名称）
-                       静默映射为真实资产分类名称，每行输出一个；清单内容与映射过程不输出。
+                       对照内置资产分类清单静默映射为真实资产分类名称，每行输出一个；
+                       清单内容与映射过程不输出。
 
 帮助：
   --help, -h           显示此帮助信息
@@ -55,7 +65,6 @@ Token 管理：
 环境变量：
   GONGBEI_CONFIG       覆盖默认配置文件路径（默认 ~/.gongbei-skills/config）
   GONGBEI_BASE_URL     覆盖 API 基础域名（默认 https://d-oapi.gongbeiyun.com）
-  GONGBEI_CATEGORY_MAP 覆盖资产分类清单路径（默认 ~/.gongbei-skills/asset-category-map）
 
 配置文件：
   ~/.gongbei-skills/config   key=value 格式，存储以下键：
@@ -66,8 +75,7 @@ Token 管理：
     GONGBEI_TOKEN_EXPIRY       appToken 过期时间戳（Unix 秒）
 
 资产分类清单：
-  ~/.gongbei-skills/asset-category-map   key=value 格式，每行: 加密编码=分类名称
-    该文件为本地敏感映射，内容不输出、不提交、不进提示词
+  内置在 gb_helper.sh 中（加密编码=分类名称）；为敏感映射，内容不输出、不进提示词
 
 EOF
 }
@@ -212,28 +220,19 @@ cmd_clear_token() {
 # 资产分类（静默转换，所有公贝技能通用）
 # ─────────────────────────────────────────────────────────────────────────────
 
-# 读取 GONGBEI_APP_TYPE（加密后的资产分类编码，逗号分隔多个），对照本地资产分类清单
-# （GONGBEI_CATEGORY_MAP，默认 ~/.gongbei-skills/asset-category-map，每行: 加密编码=分类名称）
+# 读取 GONGBEI_APP_TYPE（加密后的资产分类编码，逗号分隔多个），对照内置资产分类清单
 # 静默映射为真实资产分类名称，每行输出一个。
 # 安全约定：清单内容与映射过程不输出、不打印、不缓存；仅输出转换后的分类名称供过滤使用。
 cmd_categories() {
-  local app_type map_path code name
+  local app_type code name
   app_type=$(require_cfg GONGBEI_APP_TYPE)
-  map_path="$CATEGORY_MAP"
-
-  if [ ! -f "$map_path" ]; then
-    echo "❌ 找不到资产分类清单: $map_path" >&2
-    echo "   请创建本地清单（每行: 加密编码=分类名称），或用 GONGBEI_CATEGORY_MAP 指定路径" >&2
-    exit 1
-  fi
 
   IFS=',' read -ra codes <<< "$app_type"
   for code in "${codes[@]}"; do
     code=$(echo "$code" | tr -d ' ')
     [ -z "$code" ] && continue
-    name=$(awk -F= -v c="$code" '$1==c {sub(/^[^=]*=/,""); print; exit}' "$map_path" 2>/dev/null | tr -d '\r')
-    if [ -z "$name" ]; then
-      echo "❌ GONGBEI_APP_TYPE 中部分编码未在资产分类清单中找到映射，请检查配置与清单" >&2
+    if ! name=$(printf '%s\n' "$CATEGORY_LIST" | awk -F= -v c="$code" '$1==c {sub(/^[^=]*=/,""); print; found=1; exit} END{if(!found) exit 1}' | tr -d '\r'); then
+      echo "❌ GONGBEI_APP_TYPE 中部分编码未在资产分类清单中找到映射，请检查配置" >&2
       exit 1
     fi
     echo "$name"
