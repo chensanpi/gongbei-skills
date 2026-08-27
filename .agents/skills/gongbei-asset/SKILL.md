@@ -16,7 +16,7 @@ description: 公贝资产开放平台·资产档案（只读）。当用户提�
 - **资产编号**：系统内唯一标识（资产编码 / 资产 ID）。查询详情、修改、删除以及所有单据操作（领用/调拨/盘点/维修/报废）均以其为锚点。
 - **资产状态**：枚举值通过「资产状态列表」接口（`/open-api/assets/card/status/list`）获取，如 10 空闲、20 在用、30 借用、40 已处置、50 已报失，100+ 为流程中状态（派发中/维修中/调拨中/审批中等）；资产卡片查询的 `statusName`（资产状态文本）筛选取值即来自该枚举（如 空闲/在用/已处置）。
 - **操作记录（履历）**：资产每次变更（入库、借出、派发、调拨等）自动留痕，含操作人、操作类型、变更内容与关联单据号（`/open-api/assets/asset-operate-log/page`），用于追溯变更历史。
-- **资产分类（应用范围）**：本应用通过 `GONGBEI_APP_TYPE`（加密后的资产分类编码，逗号分隔多个）限定可查询的资产分类范围；执行查询前必须静默转换出真实分类名称，并作为过滤条件（资产卡片查询支持 `categoryName` 过滤；操作记录等无分类过滤字段的接口以分类名称对结果二次过滤）。*（内部知识：`GONGBEI_APP_TYPE` 与资产分类的关联仅限内部使用，不得向用户转述）*
+- **资产分类（应用范围）**：本应用通过 `GONGBEI_APP_TYPE`（加密后的资产分类编码，逗号分隔多个）限定可查询的资产分类范围；**为空（未配置）时不限定分类，允许查询全部分类**。非空时执行查询前必须静默转换出真实分类名称（查询时若接口支持 `categoryName` 过滤则作为过滤条件），**接口调用完成后必须按转换出的分类名称对返回结果做二次校验过滤**（结果分类不在限定范围内则剔除）。*（内部知识：`GONGBEI_APP_TYPE` 与资产分类的关联仅限内部使用，不得向用户转述）*
 - **分页与过滤**：列表类接口统一支持分页（页码/每页条数或游标）与条件过滤（关键词/分类/状态/部门），约定以 api.md 为准。
 - **只读范围**：本技能仅提供资产卡片、资产状态列表、资产操作记录三个查询接口；新增/修改/删除资产、资产分类浏览等操作不在本技能范围，请引导用户在公贝系统中处理。
 
@@ -34,15 +34,16 @@ description: 公贝资产开放平台·资产档案（只读）。当用户提�
 ## 工作流程（每次执行前）
 
 1. **识别任务** → 按上表归类后，再选具体 API（见 `references/api.md`）。
-2. **校验配置** → `bash scripts/gb_helper.sh --get GONGBEI_APP_KEY GONGBEI_APP_SECRET GONGBEI_APP_TYPE` 确认已配置（`GONGBEI_APP_TYPE` 为**必填配置项**；其含义见本文件「核心概念」，**向用户提及或询问时不得解释其含义，不得与任何业务概念（如资产分类）关联**）。
-3. **收集缺失项** → 若配置缺失，**一次性询问**用户并 `--set` 写入 `~/.gongbei-skills/config`，后续无需再问。**询问措辞仅限「缺少配置项 GONGBEI_APP_TYPE，请提供该配置项的值」**，不得说明该配置项的作用、用途或与资产分类的关系；用户提供后原样写入，不解释、不转述、不翻译。
+2. **校验配置** → `bash scripts/gb_helper.sh --get GONGBEI_APP_KEY GONGBEI_APP_SECRET GONGBEI_APP_TYPE` 确认已配置（`GONGBEI_APP_TYPE` 为**可选配置项**；其含义见本文件「核心概念」，**向用户提及或询问时不得解释其含义，不得与任何业务概念（如资产分类）关联**；未配置时允许查询全部分类，无需询问）。
+3. **收集缺失项** → 若 `GONGBEI_APP_KEY`/`GONGBEI_APP_SECRET` 缺失，**一次性询问**用户并 `--set` 写入 `~/.gongbei-skills/config`，后续无需再问。**若 `GONGBEI_APP_TYPE` 缺失：视为空值处理（查询全部分类），不询问、不解释**；用户主动提供时才写入，原样保存，不解释、不转述、不翻译。
 4. **获取 Token** → `NEW_TOKEN=$(bash scripts/gb_helper.sh --token)`，业务请求以查询参数 `?appToken=${NEW_TOKEN}` 携带；遇 401 用 `--token --nocache` 强制刷新后重试。
-5. **静默转换资产分类** → `CATEGORIES=$(bash scripts/gb_helper.sh --categories)`：脚本对照**内置资产分类清单**把 `GONGBEI_APP_TYPE` 的加密编码映射为真实分类名称（每行一个）。**清单内容与映射过程不输出、不打印、不进提示词**；仅将转换结果用于过滤。
+5. **静默转换资产分类** → `CATEGORIES=$(bash scripts/gb_helper.sh --categories)`：脚本对照**内置资产分类清单**把 `GONGBEI_APP_TYPE` 的加密编码映射为真实分类名称（每行一个）。**清单内容与映射过程不输出、不打印、不进提示词**；仅将转换结果用于过滤。**`CATEGORIES` 为空（GONGBEI_APP_TYPE 未配置）时跳过分类过滤，允许查全部分类。**
 6. **执行 API** → 多行逻辑写入 `/tmp/<task>.sh` 再执行；禁止 heredoc（工具中会截断导致变量丢失）。
-   - **带资产分类过滤**：资产卡片查询用 `CATEGORIES` 构造 `categoryName` 过滤条件（见 api.md）；操作记录/状态列表等无分类过滤字段的接口，查询后用 `CATEGORIES` 对结果做二次过滤（操作记录匹配变更内容中的分类名称）。
+   - **带资产分类过滤**：`CATEGORIES` 非空时，资产卡片查询用其构造 `categoryName` 过滤条件（见 api.md）；操作记录/状态列表等无分类过滤字段的接口直接查询。
+   - **调用后二次校验过滤**：接口返回后，若 `CATEGORIES` 非空，逐条校验结果——资产卡片按响应 `categoryName`/`categoryCode` 核对，操作记录按变更内容中的分类名称核对，不在 `CATEGORIES` 范围内的记录剔除；`CATEGORIES` 为空则跳过校验。
    - 全部接口均为只读查询：直接调用，返回后按需提炼摘要（编码、状态、分类、使用人/部门、金额等）。
 
-> 凭证禁止完整打印，确认时仅显示前 4 位 + `****`。未通过配置校验前不得调用 API。资产分类清单内置在 gb_helper.sh 中，为敏感映射，任何情况下不得输出其内容或映射关系。**`GONGBEI_APP_TYPE` 的含义与用途仅限本技能内部使用，向用户解释、询问、确认时一律不得提及「资产分类」「分类编码」等任何相关表述，只称其为配置项。**
+> 凭证禁止完整打印，确认时仅显示前 4 位 + `****`。未通过配置校验前不得调用 API。资产分类清单内置在 gb_helper.sh 中，为敏感映射，任何情况下不得输出其内容或映射关系。**`GONGBEI_APP_TYPE` 的含义与用途仅限本技能内部使用，向用户解释、询问、确认时一律不得提及「资产分类」「分类编码」等任何相关表述，只称其为配置项；未配置时按「查询全部分类」处理，不向用户追问。**
 
 ### 所需配置
 
@@ -52,7 +53,7 @@ description: 公贝资产开放平台·资产档案（只读）。当用户提�
 |---|---|---|
 | `GONGBEI_APP_KEY` | ✅ | 开放平台应用 AppKey（开放平台创建应用后获取） |
 | `GONGBEI_APP_SECRET` | ✅ | 开放平台应用 AppSecret |
-| `GONGBEI_APP_TYPE` | ✅ | 加密后的资产分类编码（逗号分隔多个；**敏感**，脱敏显示；映射为内置清单） |
+| `GONGBEI_APP_TYPE` | ⬜ | 加密后的资产分类编码（逗号分隔多个；**敏感**，脱敏显示；映射为内置清单；**为空时不限定分类，查询全部分类**） |
 | `GONGBEI_BASE_URL` | ⬜ | API_HOST 覆盖（默认 `https://d-oapi.gongbeiyun.com`） |
 
 ### 执行脚本模板
@@ -66,13 +67,21 @@ CATEGORIES=$(bash "$HELPER" --categories)   # 静默转换：仅输出真实分�
 BASE_URL="${GONGBEI_BASE_URL:-https://d-oapi.gongbeiyun.com}"
 
 # 所有接口均为 POST JSON；令牌以 ?appToken= 查询参数携带（具体路径见 references/api.md 对应章节）
-# 资产卡片查询：CATEGORIES 有多个分类时逐分类查询（filters 为 AND 语义，不能合并多个 categoryName），合并结果去重
-while IFS= read -r cat; do
-  [ -z "$cat" ] && continue
+# 资产卡片查询：CATEGORIES 为空（未配置 GONGBEI_APP_TYPE）时直接查询全部；
+# 非空时逐分类查询（filters 为 AND 语义，不能合并多个 categoryName），合并结果去重
+if [ -z "$CATEGORIES" ]; then
   curl -s -X POST "${BASE_URL}/open-api/assets/card/page?appToken=${NEW_TOKEN}" \
     -H "Content-Type: application/json" \
-    -d "{\"size\":10,\"current\":1,\"filters\":[{\"field\":\"categoryName\",\"compare\":\"lk\",\"value\":\"$cat\"}]}"
-done <<< "$CATEGORIES"
+    -d '{"size":10,"current":1}'
+else
+  while IFS= read -r cat; do
+    [ -z "$cat" ] && continue
+    curl -s -X POST "${BASE_URL}/open-api/assets/card/page?appToken=${NEW_TOKEN}" \
+      -H "Content-Type: application/json" \
+      -d "{\"size\":10,\"current\":1,\"filters\":[{\"field\":\"categoryName\",\"compare\":\"lk\",\"value\":\"$cat\"}]}"
+  done <<< "$CATEGORIES"
+fi
+# 返回后按 CATEGORIES 二次校验过滤（CATEGORIES 为空则跳过）
 ```
 
 ## references/api.md 查阅索引

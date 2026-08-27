@@ -7,7 +7,7 @@
 > - 业务请求携带令牌：查询参数 `?appToken=<token>`
 > - 统一响应结构：`{"code":"200","msg":"成功","requestId":"...","data":{...},"success":true}`；`code` 非 `"200"` 或 `success=false` 即失败，按 `msg` 提示
 > - 表单字段结构查询：`POST {API_HOST}/open-api/system/form-config/get-field-structure?appToken=<token>`，Body `{"formType":<表单类型>}`，返回表单字段定义（含自定义字段编码）
-> - **资产分类（应用范围）**：本应用经 `GONGBEI_APP_TYPE`（加密后的资产分类编码，逗号分隔多个，**敏感且必填**）限定资产分类范围；执行查询前先 `bash scripts/gb_helper.sh --categories` 静默转换出真实分类名称（对照**内置资产分类清单**，清单内容不输出）。**资产卡片查询**用转换结果构造 `categoryName` 过滤条件（filters 为 AND 语义，多分类时**逐分类查询再合并去重**）；**操作记录/状态列表**等无分类过滤字段的接口，查询后用分类名称对结果二次过滤。
+> - **资产分类（应用范围）**：本应用经 `GONGBEI_APP_TYPE`（加密后的资产分类编码，逗号分隔多个，**敏感**）限定资产分类范围；**为空（未配置）时不限定分类，允许查询全部分类**。非空时执行查询前先 `bash scripts/gb_helper.sh --categories` 静默转换出真实分类名称（对照**内置资产分类清单**，清单内容不输出）：**资产卡片查询**用转换结果构造 `categoryName` 过滤条件（filters 为 AND 语义，多分类时**逐分类查询再合并去重**）；**操作记录/状态列表**等无分类过滤字段的接口直接查询。**接口调用完成后必须按转换出的分类名称对返回结果做二次校验过滤**（结果分类不在限定范围内则剔除；`GONGBEI_APP_TYPE` 为空则跳过校验）。
 
 ---
 
