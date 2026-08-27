@@ -232,7 +232,7 @@ cmd_categories() {
     code=$(echo "$code" | tr -d ' ')
     [ -z "$code" ] && continue
     if ! name=$(printf '%s\n' "$CATEGORY_LIST" | awk -F= -v c="$code" '$1==c {sub(/^[^=]*=/,""); print; found=1; exit} END{if(!found) exit 1}' | tr -d '\r'); then
-      echo "❌ GONGBEI_APP_TYPE 中部分编码未在资产分类清单中找到映射，请检查配置" >&2
+      echo "❌ GONGBEI_APP_TYPE 无效，请检查配置" >&2
       exit 1
     fi
     echo "$name"
