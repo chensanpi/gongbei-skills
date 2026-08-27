@@ -144,7 +144,7 @@ else
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
-echo "== 5. 资产分类静默转换（--categories）=="
+echo "== 5. 资产分类静默转换（--categories，内置清单）=="
 
 # 5.1 缺少 GONGBEI_APP_TYPE 时报错
 EMPTY_CONFIG2=$(mktemp /tmp/gb_helper_test_empty2.XXXXXX)
@@ -156,58 +156,49 @@ else
   ng "5.1 缺少 GONGBEI_APP_TYPE 时 --categories 报错提示" "包含: 缺少配置项 GONGBEI_APP_TYPE" "$OUT"
 fi
 
-# 5.2 清单文件不存在时报错（先设置 GONGBEI_APP_TYPE，避免先报缺配置）
-bash "$HELPER" --set GONGBEI_APP_TYPE=enc_abc > /dev/null
-TEMP_MAP=$(mktemp /tmp/gb_helper_test_map.XXXXXX)
-rm -f "$TEMP_MAP"
-OUT=$(GONGBEI_CATEGORY_MAP="$TEMP_MAP" bash "$HELPER" --categories 2>&1 || true)
-if echo "$OUT" | grep -qF "找不到资产分类清单"; then
-  ok "5.2 清单文件缺失时 --categories 报错"
+# 5.2 正常转换：按内置清单映射出真实分类名称（每行一个）
+bash "$HELPER" --set GONGBEI_APP_TYPE="Ak, GH" > /dev/null
+OUT=$(bash "$HELPER" --categories)
+if echo "$OUT" | grep -qF "办公设备" && echo "$OUT" | grep -qF "工程设备" && ! echo "$OUT" | grep -qF "工程设施"; then
+  ok "5.2 --categories 按内置清单映射出真实分类名称"
 else
-  ng "5.2 清单文件缺失时 --categories 报错" "包含: 找不到资产分类清单" "$OUT"
+  ng "5.2 --categories 按内置清单映射出真实分类名称" "输出: 办公设备/工程设备（不含工程设施）" "$OUT"
 fi
 
-# 5.3 正常转换：按清单映射出真实分类名称（每行一个）
-cat > "$TEMP_MAP" <<EOF
-enc_abc=笔记本电脑
-enc_def=台式机
-enc_ghi=打印机
-EOF
-bash "$HELPER" --set GONGBEI_APP_TYPE="enc_abc, enc_def" > /dev/null
-OUT=$(GONGBEI_CATEGORY_MAP="$TEMP_MAP" bash "$HELPER" --categories)
-if echo "$OUT" | grep -qF "笔记本电脑" && echo "$OUT" | grep -qF "台式机" && ! echo "$OUT" | grep -qF "打印机"; then
-  ok "5.3 --categories 按清单映射出真实分类名称"
+# 5.3 映射输出不包含清单中的加密编码
+if echo "$OUT" | grep -qF "Ak" || echo "$OUT" | grep -qF "GH"; then
+  ng "5.3 --categories 输出不泄露加密编码" "不含 Ak/GH" "$OUT"
 else
-  ng "5.3 --categories 按清单映射出真实分类名称" "输出: 笔记本电脑/台式机（不含打印机）" "$OUT"
+  ok "5.3 --categories 输出不泄露加密编码"
 fi
 
-# 5.4 映射输出不包含清单中的加密编码
-if echo "$OUT" | grep -qF "enc_abc" || echo "$OUT" | grep -qF "enc_def"; then
-  ng "5.4 --categories 输出不泄露加密编码" "不含 enc_*" "$OUT"
-else
-  ok "5.4 --categories 输出不泄露加密编码"
-fi
-
-# 5.5 未匹配编码时报错
-bash "$HELPER" --set GONGBEI_APP_TYPE="enc_abc, enc_zzz" > /dev/null
-OUT=$(GONGBEI_CATEGORY_MAP="$TEMP_MAP" bash "$HELPER" --categories 2>&1 || true)
+# 5.4 未匹配编码时报错
+bash "$HELPER" --set GONGBEI_APP_TYPE="Ak, enc_zzz" > /dev/null
+OUT=$(bash "$HELPER" --categories 2>&1 || true)
 if echo "$OUT" | grep -qF "未在资产分类清单中找到映射"; then
-  ok "5.5 未匹配编码时 --categories 报错"
+  ok "5.4 未匹配编码时 --categories 报错"
 else
-  ng "5.5 未匹配编码时 --categories 报错" "包含: 未在资产分类清单中找到映射" "$OUT"
+  ng "5.4 未匹配编码时 --categories 报错" "包含: 未在资产分类清单中找到映射" "$OUT"
+fi
+
+# 5.5 清单中编码存在但名称为空时输出空行（如 CL），不报错
+bash "$HELPER" --set GONGBEI_APP_TYPE="CL" > /dev/null
+OUT=$(bash "$HELPER" --categories 2>&1 || true)
+if [ -z "$OUT" ]; then
+  ok "5.5 内置清单中名称为空的编码输出空行不报错"
+else
+  ng "5.5 内置清单中名称为空的编码输出空行不报错" "输出为空行" "$OUT"
 fi
 
 # 5.6 GONGBEI_APP_TYPE 脱敏显示
-bash "$HELPER" --set GONGBEI_APP_TYPE="enc_supersecret" > /dev/null
+bash "$HELPER" --set GONGBEI_APP_TYPE="Ak,GH" > /dev/null
 OUT=$(bash "$HELPER" --get GONGBEI_APP_TYPE)
-if echo "$OUT" | grep -qF "enc_supersecret"; then
+if echo "$OUT" | grep -qF "Ak,GH"; then
   ng "5.6 --get 对 GONGBEI_APP_TYPE 脱敏" "输出不含完整值" "$OUT"
 else
   ok "5.6 --get 对 GONGBEI_APP_TYPE 脱敏"
 fi
-assert_contains "5.7 --get 脱敏后保留前 4 位" "GONGBEI_APP_TYPE=enc_****" "$OUT"
-
-rm -f "$TEMP_MAP"
+assert_contains "5.7 --get 脱敏后保留前 4 位" "GONGBEI_APP_TYPE=Ak,G****" "$OUT"
 
 # ─────────────────────────────────────────────────────────────────────────────
 echo ""
