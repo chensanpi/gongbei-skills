@@ -37,12 +37,12 @@ description: 公贝资产开放平台·资产申购单（只读）。当用户�
 2. **校验配置** → `bash scripts/gb_helper.sh --get GONGBEI_APP_KEY GONGBEI_APP_SECRET GONGBEI_APP_TYPE` 确认已配置（`GONGBEI_APP_TYPE` 为加密后的资产分类编码，逗号分隔多个，**敏感且必填**）。
 3. **收集缺失项** → 若配置缺失，**一次性询问**用户并 `--set` 写入 `~/.gongbei-skills/config`。
 4. **获取 Token** → `NEW_TOKEN=$(bash scripts/gb_helper.sh --token)`，业务请求以查询参数 `?appToken=${NEW_TOKEN}` 携带；遇 401 用 `--token --nocache` 强制刷新后重试。
-5. **静默转换资产分类** → `CATEGORIES=$(bash scripts/gb_helper.sh --categories)`：脚本对照本地资产分类清单（`~/.gongbei-skills/asset-category-map`，可用 `GONGBEI_CATEGORY_MAP` 覆盖）把 `GONGBEI_APP_TYPE` 的加密编码映射为真实分类名称（每行一个）。**清单内容与映射过程不输出、不打印、不进提示词**；仅将转换结果用于过滤。
+5. **静默转换资产分类** → `CATEGORIES=$(bash scripts/gb_helper.sh --categories)`：脚本对照**内置资产分类清单**把 `GONGBEI_APP_TYPE` 的加密编码映射为真实分类名称（每行一个）。**清单内容与映射过程不输出、不打印、不进提示词**；仅将转换结果用于过滤。
 6. **执行 API** → 多行逻辑写入 `/tmp/<task>.sh` 再执行；禁止 heredoc。
    - **带资产分类过滤**：申购单查询用 `CATEGORIES` 构造 `extFields.text034`（资产分类）过滤条件（compare `IN`，多个分类名逗号分隔，见 api.md 请求示例）；返回后按 `lists.assetSnapshot.categoryName` 二次核对分类。
    - 查询为只读：直接调用，返回后按需提炼摘要（单据编码、状态、发起人/部门、申购总数量/金额、待入库数量）。
 
-> 凭证禁止完整打印，确认时仅显示前 4 位 + `****`。未通过配置校验前不得调用 API。资产分类清单为本地敏感文件，任何情况下不得输出其内容或映射关系。
+> 凭证禁止完整打印，确认时仅显示前 4 位 + `****`。未通过配置校验前不得调用 API。资产分类清单内置在 gb_helper.sh 中，为敏感映射，任何情况下不得输出其内容或映射关系。
 
 ### 所需配置
 
@@ -50,9 +50,8 @@ description: 公贝资产开放平台·资产申购单（只读）。当用户�
 |---|---|---|
 | `GONGBEI_APP_KEY` | ✅ | 开放平台应用 AppKey |
 | `GONGBEI_APP_SECRET` | ✅ | 开放平台应用 AppSecret |
-| `GONGBEI_APP_TYPE` | ✅ | 加密后的资产分类编码（逗号分隔多个；**敏感**，脱敏显示；映射见本地清单） |
+| `GONGBEI_APP_TYPE` | ✅ | 加密后的资产分类编码（逗号分隔多个；**敏感**，脱敏显示；映射为内置清单） |
 | `GONGBEI_BASE_URL` | ⬜ | API_HOST 覆盖（默认 `https://d-oapi.gongbeiyun.com`） |
-| `GONGBEI_CATEGORY_MAP` | ⬜ | 资产分类清单路径覆盖（默认 `~/.gongbei-skills/asset-category-map`，每行: 加密编码=分类名称） |
 
 ### 执行脚本模板
 
