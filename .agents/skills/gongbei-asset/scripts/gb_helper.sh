@@ -20,6 +20,8 @@ CONFIG="${GONGBEI_CONFIG:-$HOME/.gongbei-skills/config}"
 BASE_URL="${GONGBEI_BASE_URL:-https://d-oapi.gongbeiyun.com}"
 # 获取 appToken 的鉴权接口路径（官方文档确认）
 TOKEN_PATH="/open-api/auth/getAppToken"
+# 资产分类清单（本地敏感映射文件，可用 GONGBEI_CATEGORY_MAP 覆盖；每行: 加密编码=分类名称）
+CATEGORY_MAP="${GONGBEI_CATEGORY_MAP:-$HOME/.gongbei-skills/asset-category-map}"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 帮助信息
@@ -41,19 +43,31 @@ Token 管理：
   --get  KEY [KEY...]  获取一个或多个配置项的值（敏感项脱敏显示）
   --set  KEY=VALUE     将配置项持久化写入配置文件（已存在则更新，不存在则追加，目录自动创建）
 
+资产分类（静默转换，所有公贝技能通用）：
+  --categories         读取 GONGBEI_APP_TYPE（加密后的资产分类编码，逗号分隔多个），
+                       对照本地资产分类清单（GONGBEI_CATEGORY_MAP，默认
+                       ~/.gongbei-skills/asset-category-map，每行: 加密编码=分类名称）
+                       静默映射为真实资产分类名称，每行输出一个；清单内容与映射过程不输出。
+
 帮助：
   --help, -h           显示此帮助信息
 
 环境变量：
   GONGBEI_CONFIG       覆盖默认配置文件路径（默认 ~/.gongbei-skills/config）
   GONGBEI_BASE_URL     覆盖 API 基础域名（默认 https://d-oapi.gongbeiyun.com）
+  GONGBEI_CATEGORY_MAP 覆盖资产分类清单路径（默认 ~/.gongbei-skills/asset-category-map）
 
 配置文件：
   ~/.gongbei-skills/config   key=value 格式，存储以下键：
     GONGBEI_APP_KEY            应用 AppKey（开放平台创建应用后获取）
     GONGBEI_APP_SECRET         应用 AppSecret（同上）
+    GONGBEI_APP_TYPE           加密后的资产分类编码（逗号分隔多个，敏感且必填）
     GONGBEI_APP_TOKEN          appToken 缓存
     GONGBEI_TOKEN_EXPIRY       appToken 过期时间戳（Unix 秒）
+
+资产分类清单：
+  ~/.gongbei-skills/asset-category-map   key=value 格式，每行: 加密编码=分类名称
+    该文件为本地敏感映射，内容不输出、不提交、不进提示词
 
 EOF
 }
@@ -102,7 +116,7 @@ require_cfg() {
 # 判断某键是否为敏感项（输出时脱敏）
 is_sensitive() {
   case "$1" in
-    GONGBEI_APP_SECRET|GONGBEI_APP_TOKEN) return 0 ;;
+    GONGBEI_APP_SECRET|GONGBEI_APP_TOKEN|GONGBEI_APP_TYPE) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -195,6 +209,38 @@ cmd_clear_token() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 资产分类（静默转换，所有公贝技能通用）
+# ─────────────────────────────────────────────────────────────────────────────
+
+# 读取 GONGBEI_APP_TYPE（加密后的资产分类编码，逗号分隔多个），对照本地资产分类清单
+# （GONGBEI_CATEGORY_MAP，默认 ~/.gongbei-skills/asset-category-map，每行: 加密编码=分类名称）
+# 静默映射为真实资产分类名称，每行输出一个。
+# 安全约定：清单内容与映射过程不输出、不打印、不缓存；仅输出转换后的分类名称供过滤使用。
+cmd_categories() {
+  local app_type map_path code name
+  app_type=$(require_cfg GONGBEI_APP_TYPE)
+  map_path="$CATEGORY_MAP"
+
+  if [ ! -f "$map_path" ]; then
+    echo "❌ 找不到资产分类清单: $map_path" >&2
+    echo "   请创建本地清单（每行: 加密编码=分类名称），或用 GONGBEI_CATEGORY_MAP 指定路径" >&2
+    exit 1
+  fi
+
+  IFS=',' read -ra codes <<< "$app_type"
+  for code in "${codes[@]}"; do
+    code=$(echo "$code" | tr -d ' ')
+    [ -z "$code" ] && continue
+    name=$(awk -F= -v c="$code" '$1==c {sub(/^[^=]*=/,""); print; exit}' "$map_path" 2>/dev/null | tr -d '\r')
+    if [ -z "$name" ]; then
+      echo "❌ GONGBEI_APP_TYPE 中部分编码未在资产分类清单中找到映射，请检查配置与清单" >&2
+      exit 1
+    fi
+    echo "$name"
+  done
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 配置管理
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -266,6 +312,9 @@ case "$CMD" in
     ;;
   --clear-token)
     cmd_clear_token
+    ;;
+  --categories)
+    cmd_categories
     ;;
   --config)
     cmd_config
