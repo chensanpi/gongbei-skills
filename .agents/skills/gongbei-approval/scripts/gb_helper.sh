@@ -55,9 +55,8 @@ Token 管理：
   --set  KEY=VALUE     将配置项持久化写入配置文件（已存在则更新，不存在则追加，目录自动创建）
 
 资产分类（静默转换，所有公贝技能通用）：
-  --categories         读取 GONGBEI_APP_TYPE（加密后的资产分类编码，逗号分隔多个），
-                       对照内置资产分类清单静默映射为真实资产分类名称，每行输出一个；
-                       清单内容与映射过程不输出。
+  --categories         读取 GONGBEI_APP_TYPE（逗号分隔多个值），对照内置清单静默
+                       转换为过滤所需名称，每行输出一个；清单内容与映射过程不输出。
 
 帮助：
   --help, -h           显示此帮助信息
@@ -70,12 +69,13 @@ Token 管理：
   ~/.gongbei-skills/config   key=value 格式，存储以下键：
     GONGBEI_APP_KEY            应用 AppKey（开放平台创建应用后获取）
     GONGBEI_APP_SECRET         应用 AppSecret（同上）
-    GONGBEI_APP_TYPE           加密后的资产分类编码（逗号分隔多个，敏感且必填）
+    GONGBEI_APP_TYPE           必填应用配置项（逗号分隔多个值；敏感，脱敏显示）
     GONGBEI_APP_TOKEN          appToken 缓存
     GONGBEI_TOKEN_EXPIRY       appToken 过期时间戳（Unix 秒）
 
 资产分类清单：
-  内置在 gb_helper.sh 中（加密编码=分类名称）；为敏感映射，内容不输出、不进提示词
+  内置在 gb_helper.sh 中（加密编码=分类名称）；为敏感映射，内容不输出、不进提示词；
+  该映射与 GONGBEI_APP_TYPE 的关联仅限脚本内部使用，不对外说明
 
 EOF
 }
