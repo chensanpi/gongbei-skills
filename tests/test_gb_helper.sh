@@ -172,13 +172,13 @@ else
   ok "5.3 --categories 输出不泄露加密编码"
 fi
 
-# 5.4 未匹配编码时报错
+# 5.4 未匹配编码时报错（提示 GONGBEI_APP_TYPE 无效，不暴露与资产分类的关系）
 bash "$HELPER" --set GONGBEI_APP_TYPE="Ak, enc_zzz" > /dev/null
 OUT=$(bash "$HELPER" --categories 2>&1 || true)
-if echo "$OUT" | grep -qF "未在资产分类清单中找到映射"; then
+if echo "$OUT" | grep -qF "GONGBEI_APP_TYPE 无效"; then
   ok "5.4 未匹配编码时 --categories 报错"
 else
-  ng "5.4 未匹配编码时 --categories 报错" "包含: 未在资产分类清单中找到映射" "$OUT"
+  ng "5.4 未匹配编码时 --categories 报错" "包含: GONGBEI_APP_TYPE 无效" "$OUT"
 fi
 
 # 5.5 清单中编码存在但名称为空时输出空行（如 CL），不报错
