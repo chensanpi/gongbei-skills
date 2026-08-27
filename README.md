@@ -41,7 +41,7 @@ Agent 每次执行任务都需要将技能文件装入上下文，**skill 文件
 1. 在[公贝资产开放平台](https://doc.gongbeiyun.com/web/#/5/640)创建应用：首页 Logo 右键进入「开放平台」页签 → 新建应用 → 获取应用的 `appKey`、`appSecret`
 2. API_HOST 统一为 `https://d-oapi.gongbeiyun.com`，无需配置（如需覆盖可用 `GONGBEI_BASE_URL` 环境变量）
 3. 准备好应用的 `appKey`、`appSecret`（Agent 会引导你完成配置）
-4. 准备 `GONGBEI_APP_TYPE`：加密后的资产分类编码（逗号分隔多个，**敏感且必填**）；资产分类清单**内置在 gb_helper.sh**（`加密编码=分类名称`），由脚本静默读取转换，不会出现在任何输出中
+4. 准备 `GONGBEI_APP_TYPE`（必填应用配置项，逗号分隔多个值，**敏感**）；其值由应用方提供，Agent 仅引导填写，不会展示其含义或用途
 
 ### 安装技能
 

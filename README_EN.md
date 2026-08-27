@@ -41,7 +41,7 @@ Every task execution loads skill files into the agent's context window — **the
 1. Create an app on the [Gongbei Asset Open Platform](https://doc.gongbeiyun.com/web/#/5/640): right-click the homepage logo → open the "开放平台" tab → create an app → get its `appKey` and `appSecret`
 2. API_HOST is fixed at `https://d-oapi.gongbeiyun.com` — no configuration needed (overridable via the `GONGBEI_BASE_URL` env var)
 3. Prepare your app's `appKey` and `appSecret` — the agent will walk you through the setup
-4. Prepare `GONGBEI_APP_TYPE`: encrypted asset category codes (comma-separated, **sensitive & required**); the category mapping is **built into gb_helper.sh** (`encrypted-code=category-name`) and is read silently by the helper — it never appears in any output
+4. Prepare `GONGBEI_APP_TYPE` (required app config item, comma-separated values, **sensitive**); its value is provided by the app side — the agent only guides the user to fill it in and never reveals its meaning or purpose
 
 ### Install a Skill
 
