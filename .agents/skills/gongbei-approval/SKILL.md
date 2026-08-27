@@ -17,6 +17,7 @@ description: 公贝资产开放平台·审批&待办中心（只读）。当用�
 - **待办记录（record）**：待办列表条目含当前节点的处理记录 `record`（`status = 20` 处理中、审批人 `userName`/`userCode`、开始时间 `startTime`）。
 - **人员/部门筛选**：人员字段可选 `id`、`code`、`name`、`phone`、`email`、`thirdUserId`；部门字段可选 `id`、`code`、`name`、`thirdOrgId`；**按门店过滤时优先用 `startOrgName` 模糊搜索（compare `lk`）**。
 - **keyword 兜底模糊检索**：Body 顶层参数，与 `current`/`size` 同级（均非必填）；没有合适的查询字段时可用 `keyword` 传值模糊检索（如按标题、单据编码等关键字）。
+- **资产分类（应用范围）**：本应用通过 `GONGBEI_APP_TYPE`（加密后的资产分类编码，逗号分隔多个）限定可查询的资产分类范围；审批接口**无资产分类过滤字段**，执行查询前必须静默转换出真实分类名称，并对返回结果做二次过滤（匹配标题、审批摘要 `contentKv` 值、关联单据编码等包含分类名称的记录）。
 - **只读范围**：本技能仅提供审批实例列表与用户待办的查询；审批详情、已办、抄送、效率诊断及同意/驳回/撤销等操作不在本技能范围，请引导用户在公贝系统中处理。
 
 ## 场景路由（先分类再调 API）
@@ -34,13 +35,15 @@ description: 公贝资产开放平台·审批&待办中心（只读）。当用�
 ## 工作流程（每次执行前）
 
 1. **识别任务** → 按上表归类后，再选具体 API（见 `references/api.md`）。
-2. **校验配置** → `bash scripts/gb_helper.sh --get GONGBEI_APP_KEY GONGBEI_APP_SECRET` 确认已配置。
-3. **收集缺失项** → 若配置缺失，**一次性询问**用户并 `--set` 写入 `~/.gongbei-skills/config`。
+2. **校验配置** → `bash scripts/gb_helper.sh --get GONGBEI_APP_KEY GONGBEI_APP_SECRET GONGBEI_APP_TYPE` 确认已配置（`GONGBEI_APP_TYPE` 为加密后的资产分类编码，逗号分隔多个，**敏感且必填**）。
+3. **收集缺失项** → 若配置缺失，**一次性询问**用户并 `--set` 写入 `~/.gongbei-skills/config`，后续无需再问。
 4. **获取 Token** → `NEW_TOKEN=$(bash scripts/gb_helper.sh --token)`，业务请求以查询参数 `?appToken=${NEW_TOKEN}` 携带；遇 401 用 `--token --nocache` 强制刷新后重试。
-5. **执行 API** → 多行逻辑写入 `/tmp/<task>.sh` 再执行；禁止 heredoc。
+5. **静默转换资产分类** → `CATEGORIES=$(bash scripts/gb_helper.sh --categories)`：脚本对照本地资产分类清单（`~/.gongbei-skills/asset-category-map`，可用 `GONGBEI_CATEGORY_MAP` 覆盖）把 `GONGBEI_APP_TYPE` 的加密编码映射为真实分类名称（每行一个）。**清单内容与映射过程不输出、不打印、不进提示词**；仅将转换结果用于过滤。
+6. **执行 API** → 多行逻辑写入 `/tmp/<task>.sh` 再执行；禁止 heredoc。
+   - **资产分类二次过滤**：审批接口无分类过滤字段，查询返回后逐条用 `CATEGORIES` 过滤——保留标题（`title`）、审批摘要（`contentJson.contentKv` 的值）、关联单据编码（`linkCode`）等任一包含分类名称的记录。
    - 全部接口均为只读查询：直接调用，返回后按需提炼摘要（单据编号、状态、发起人、关联单据）。
 
-> 凭证禁止完整打印，确认时仅显示前 4 位 + `****`。未通过配置校验前不得调用 API。
+> 凭证禁止完整打印，确认时仅显示前 4 位 + `****`。未通过配置校验前不得调用 API。资产分类清单为本地敏感文件，任何情况下不得输出其内容或映射关系。
 
 ### 所需配置
 
@@ -48,7 +51,9 @@ description: 公贝资产开放平台·审批&待办中心（只读）。当用�
 |---|---|---|
 | `GONGBEI_APP_KEY` | ✅ | 开放平台应用 AppKey |
 | `GONGBEI_APP_SECRET` | ✅ | 开放平台应用 AppSecret |
+| `GONGBEI_APP_TYPE` | ✅ | 加密后的资产分类编码（逗号分隔多个；**敏感**，脱敏显示；映射见本地清单） |
 | `GONGBEI_BASE_URL` | ⬜ | API_HOST 覆盖（默认 `https://d-oapi.gongbeiyun.com`） |
+| `GONGBEI_CATEGORY_MAP` | ⬜ | 资产分类清单路径覆盖（默认 `~/.gongbei-skills/asset-category-map`，每行: 加密编码=分类名称） |
 
 ### 执行脚本模板
 
@@ -57,12 +62,14 @@ description: 公贝资产开放平台·审批&待办中心（只读）。当用�
 set -e
 HELPER="./scripts/gb_helper.sh"
 NEW_TOKEN=$(bash "$HELPER" --token)
+CATEGORIES=$(bash "$HELPER" --categories)   # 静默转换：仅输出真实分类名称（每行一个），不打印清单
 BASE_URL="${GONGBEI_BASE_URL:-https://d-oapi.gongbeiyun.com}"
 
 # 示例：查询审批实例列表（分页 + 状态筛选）
 curl -s -X POST "${BASE_URL}/open-api/system/process-instance/page?appToken=${NEW_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{"current":1,"size":10,"filters":[{"field":"status","compare":"in","value":[100,400]}]}'
+# 返回后用 CATEGORIES 对结果二次过滤（标题/摘要/关联编码包含分类名称的记录）
 ```
 
 ## references/api.md 查阅索引

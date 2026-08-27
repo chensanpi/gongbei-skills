@@ -12,6 +12,7 @@
 > - **`keyword` 关键字检索（兜底模糊检索）**：Body 顶层参数，与 `current`/`size` 同级、均非必填；没有合适的查询字段时使用该参数传值
 > - **人员字段**（`startUser`/`user`）：`field` 可选 `id`、`code`、`name`、`phone`、`email`、`thirdUserId`，`value` 为对应值
 > - **部门字段**（`startOrg`）：`field` 可选 `id`、`code`、`name`、`thirdOrgId`
+> - **资产分类（应用范围）**：本应用经 `GONGBEI_APP_TYPE`（加密后的资产分类编码，逗号分隔多个，**敏感且必填**）限定资产分类范围；执行查询前先 `bash scripts/gb_helper.sh --categories` 静默转换出真实分类名称（对照本地清单 `~/.gongbei-skills/asset-category-map`，清单内容不输出）。审批接口**无资产分类过滤字段**，查询返回后用分类名称对结果做二次过滤（匹配标题 `title`、审批摘要 `contentJson.contentKv` 值、关联单据编码 `linkCode` 等包含分类名称的记录）。
 > - **实例状态**：`100` 进行中 / `200` 已拒绝 / `300` 已撤销 / `400` 已完结
 > - **待办记录状态**：`20` 处理中
 > - 时间均用**毫秒时间戳**；文档示例中的 `//` 注释实际请求时必须移除，否则 JSON 无法解析
