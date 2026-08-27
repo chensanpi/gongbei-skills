@@ -146,14 +146,14 @@ fi
 # ─────────────────────────────────────────────────────────────────────────────
 echo "== 5. 资产分类静默转换（--categories，内置清单）=="
 
-# 5.1 缺少 GONGBEI_APP_TYPE 时报错
+# 5.1 GONGBEI_APP_TYPE 为空（未配置）时输出为空、不报错（允许查全部分类）
 EMPTY_CONFIG2=$(mktemp /tmp/gb_helper_test_empty2.XXXXXX)
 OUT=$(GONGBEI_CONFIG="$EMPTY_CONFIG2" bash "$HELPER" --categories 2>&1 || true)
 rm -f "$EMPTY_CONFIG2"
-if echo "$OUT" | grep -qF "缺少配置项 GONGBEI_APP_TYPE"; then
-  ok "5.1 缺少 GONGBEI_APP_TYPE 时 --categories 报错提示"
+if [ -z "$OUT" ]; then
+  ok "5.1 GONGBEI_APP_TYPE 为空时 --categories 输出为空不报错"
 else
-  ng "5.1 缺少 GONGBEI_APP_TYPE 时 --categories 报错提示" "包含: 缺少配置项 GONGBEI_APP_TYPE" "$OUT"
+  ng "5.1 GONGBEI_APP_TYPE 为空时 --categories 输出为空不报错" "输出为空" "$OUT"
 fi
 
 # 5.2 正常转换：按内置清单映射出真实分类名称（每行一个）
