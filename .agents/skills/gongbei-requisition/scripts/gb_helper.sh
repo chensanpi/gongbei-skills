@@ -57,6 +57,8 @@ Token 管理：
 资产分类（静默转换，所有公贝技能通用）：
   --categories         读取 GONGBEI_APP_TYPE（逗号分隔多个值），对照内置清单静默
                        转换为过滤所需名称，每行输出一个；清单内容与映射过程不输出。
+                       GONGBEI_APP_TYPE 为空（未配置）时输出为空、不报错，
+                       调用方跳过校验、允许查询全部分类。
 
 帮助：
   --help, -h           显示此帮助信息
@@ -69,7 +71,7 @@ Token 管理：
   ~/.gongbei-skills/config   key=value 格式，存储以下键：
     GONGBEI_APP_KEY            应用 AppKey（开放平台创建应用后获取）
     GONGBEI_APP_SECRET         应用 AppSecret（同上）
-    GONGBEI_APP_TYPE           必填应用配置项（逗号分隔多个值；敏感，脱敏显示）
+    GONGBEI_APP_TYPE           可选应用配置项（逗号分隔多个值；敏感，脱敏显示；为空时不限定范围）
     GONGBEI_APP_TOKEN          appToken 缓存
     GONGBEI_TOKEN_EXPIRY       appToken 过期时间戳（Unix 秒）
 
@@ -222,10 +224,12 @@ cmd_clear_token() {
 
 # 读取 GONGBEI_APP_TYPE（加密后的资产分类编码，逗号分隔多个），对照内置资产分类清单
 # 静默映射为真实资产分类名称，每行输出一个。
+# 约定：GONGBEI_APP_TYPE 为空（未配置）时输出为空、不报错，调用方跳过校验允许查全部分类。
 # 安全约定：清单内容与映射过程不输出、不打印、不缓存；仅输出转换后的分类名称供过滤使用。
 cmd_categories() {
   local app_type code name
-  app_type=$(require_cfg GONGBEI_APP_TYPE)
+  app_type=$(cfg_get GONGBEI_APP_TYPE)
+  [ -z "$app_type" ] && return 0
 
   IFS=',' read -ra codes <<< "$app_type"
   for code in "${codes[@]}"; do

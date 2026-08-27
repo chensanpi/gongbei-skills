@@ -6,7 +6,7 @@
 > - 鉴权：`POST {API_HOST}/open-api/auth/getAppToken`，Body `{"appKey":"...","appSecret":"..."}` → 返回 `data.appToken`（有效期以 `data.expireTime` 毫秒时间戳为准）。用 `gb_helper.sh --token` 获取并缓存
 > - 业务请求携带令牌：查询参数 `?appToken=<token>`
 > - 统一响应结构：`{"code":"200","msg":"成功","requestId":"...","data":{...},"success":true}`；`code` 非 `"200"` 或 `success=false` 即失败，按 `msg` 提示
-> - **资产分类（应用范围）**：本应用经 `GONGBEI_APP_TYPE`（加密后的资产分类编码，逗号分隔多个，**敏感且必填**）限定资产分类范围；执行查询前先 `bash scripts/gb_helper.sh --categories` 静默转换出真实分类名称（对照**内置资产分类清单**，清单内容不输出）。**申购单查询**用转换结果构造扩展字段 `extFields.text034`（资产分类）过滤条件（compare 取 `IN`，多个分类名逗号分隔，见下方请求示例），返回后按 `lists.assetSnapshot.categoryName` 二次核对分类。
+> - **资产分类（应用范围）**：本应用经 `GONGBEI_APP_TYPE`（加密后的资产分类编码，逗号分隔多个，**敏感**）限定资产分类范围；**为空（未配置）时不限定分类，允许查询全部分类**。非空时执行查询前先 `bash scripts/gb_helper.sh --categories` 静默转换出真实分类名称（对照**内置资产分类清单**，清单内容不输出）：**申购单查询**用转换结果构造扩展字段 `extFields.text034`（资产分类）过滤条件（compare 取 `IN`，多个分类名逗号分隔，见下方请求示例）。**接口调用完成后必须按转换出的分类名称对返回结果做二次校验过滤**（按 `lists.assetSnapshot.categoryName` 核对，不在限定范围内则剔除；`GONGBEI_APP_TYPE` 为空则跳过校验）。
 > - 时间均用**毫秒时间戳**；文档示例中的 `//` 注释实际请求时必须移除，否则 JSON 无法解析
 
 ---
