@@ -144,6 +144,72 @@ else
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
+echo "== 5. 资产分类静默转换（--categories）=="
+
+# 5.1 缺少 GONGBEI_APP_TYPE 时报错
+EMPTY_CONFIG2=$(mktemp /tmp/gb_helper_test_empty2.XXXXXX)
+OUT=$(GONGBEI_CONFIG="$EMPTY_CONFIG2" bash "$HELPER" --categories 2>&1 || true)
+rm -f "$EMPTY_CONFIG2"
+if echo "$OUT" | grep -qF "缺少配置项 GONGBEI_APP_TYPE"; then
+  ok "5.1 缺少 GONGBEI_APP_TYPE 时 --categories 报错提示"
+else
+  ng "5.1 缺少 GONGBEI_APP_TYPE 时 --categories 报错提示" "包含: 缺少配置项 GONGBEI_APP_TYPE" "$OUT"
+fi
+
+# 5.2 清单文件不存在时报错（先设置 GONGBEI_APP_TYPE，避免先报缺配置）
+bash "$HELPER" --set GONGBEI_APP_TYPE=enc_abc > /dev/null
+TEMP_MAP=$(mktemp /tmp/gb_helper_test_map.XXXXXX)
+rm -f "$TEMP_MAP"
+OUT=$(GONGBEI_CATEGORY_MAP="$TEMP_MAP" bash "$HELPER" --categories 2>&1 || true)
+if echo "$OUT" | grep -qF "找不到资产分类清单"; then
+  ok "5.2 清单文件缺失时 --categories 报错"
+else
+  ng "5.2 清单文件缺失时 --categories 报错" "包含: 找不到资产分类清单" "$OUT"
+fi
+
+# 5.3 正常转换：按清单映射出真实分类名称（每行一个）
+cat > "$TEMP_MAP" <<EOF
+enc_abc=笔记本电脑
+enc_def=台式机
+enc_ghi=打印机
+EOF
+bash "$HELPER" --set GONGBEI_APP_TYPE="enc_abc, enc_def" > /dev/null
+OUT=$(GONGBEI_CATEGORY_MAP="$TEMP_MAP" bash "$HELPER" --categories)
+if echo "$OUT" | grep -qF "笔记本电脑" && echo "$OUT" | grep -qF "台式机" && ! echo "$OUT" | grep -qF "打印机"; then
+  ok "5.3 --categories 按清单映射出真实分类名称"
+else
+  ng "5.3 --categories 按清单映射出真实分类名称" "输出: 笔记本电脑/台式机（不含打印机）" "$OUT"
+fi
+
+# 5.4 映射输出不包含清单中的加密编码
+if echo "$OUT" | grep -qF "enc_abc" || echo "$OUT" | grep -qF "enc_def"; then
+  ng "5.4 --categories 输出不泄露加密编码" "不含 enc_*" "$OUT"
+else
+  ok "5.4 --categories 输出不泄露加密编码"
+fi
+
+# 5.5 未匹配编码时报错
+bash "$HELPER" --set GONGBEI_APP_TYPE="enc_abc, enc_zzz" > /dev/null
+OUT=$(GONGBEI_CATEGORY_MAP="$TEMP_MAP" bash "$HELPER" --categories 2>&1 || true)
+if echo "$OUT" | grep -qF "未在资产分类清单中找到映射"; then
+  ok "5.5 未匹配编码时 --categories 报错"
+else
+  ng "5.5 未匹配编码时 --categories 报错" "包含: 未在资产分类清单中找到映射" "$OUT"
+fi
+
+# 5.6 GONGBEI_APP_TYPE 脱敏显示
+bash "$HELPER" --set GONGBEI_APP_TYPE="enc_supersecret" > /dev/null
+OUT=$(bash "$HELPER" --get GONGBEI_APP_TYPE)
+if echo "$OUT" | grep -qF "enc_supersecret"; then
+  ng "5.6 --get 对 GONGBEI_APP_TYPE 脱敏" "输出不含完整值" "$OUT"
+else
+  ok "5.6 --get 对 GONGBEI_APP_TYPE 脱敏"
+fi
+assert_contains "5.7 --get 脱敏后保留前 4 位" "GONGBEI_APP_TYPE=enc_****" "$OUT"
+
+rm -f "$TEMP_MAP"
+
+# ─────────────────────────────────────────────────────────────────────────────
 echo ""
 echo "────────── 结果汇总 ──────────"
 echo "通过: $pass | 失败: $fail | 跳过: $skip"
