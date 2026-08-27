@@ -15,7 +15,7 @@
 - [x] 按真实鉴权文档改写 `cmd_token()`：请求 `/open-api/auth/getAppToken`，解析 `data.appToken` / `data.expireTime`（毫秒），失败时按 `code`/`msg`/`success` 报错
 - [x] 缓存键改为 `GONGBEI_APP_TOKEN` + `GONGBEI_TOKEN_EXPIRY`（Unix 秒，提前 200 秒过期）
 - [x] 同步副本到技能目录（gongbei-asset / gongbei-approval / gongbei-requisition，SHA256 校验一致）
-- [x] 新增全局配置 `GONGBEI_APP_TYPE`（加密后的资产分类编码，逗号分隔多个，敏感且必填，输出脱敏）+ 资产分类清单**内置在 gb_helper.sh**（`CATEGORY_LIST` 变量，每行 `加密编码=分类名称`，内容不输出） + `--categories` 静默转换命令（清单内匹配，输出真实分类名称）；三个技能 SKILL.md 执行流程统一为「识别任务→校验配置→收集缺失项→获取 Token→静默转换资产分类→执行 API（带分类过滤或结果二次过滤）」
+- [x] 新增全局配置 `GONGBEI_APP_TYPE`（加密后的资产分类编码，逗号分隔多个，敏感，输出脱敏；**可选**，为空时不限定分类、允许查询全部分类）+ 资产分类清单**内置在 gb_helper.sh**（`CATEGORY_LIST` 变量，每行 `加密编码=分类名称`，内容不输出） + `--categories` 静默转换命令（清单内匹配，输出真实分类名称；为空输出空不报错）；三个技能 SKILL.md 执行流程统一为「识别任务→校验配置→收集缺失项→获取 Token→静默转换资产分类（为空跳过）→执行 API→调用后按分类名称二次校验过滤（为空跳过）」
 - [ ] 身份/租户参数（如企业 ID、操作人 ID）：官方文档未提及，待业务接口文档确认后按需补充
 
 ## 2. 各技能 api.md 补齐（部分完成）
