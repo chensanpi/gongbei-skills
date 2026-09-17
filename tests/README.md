@@ -4,8 +4,16 @@
 
 | 测试 | 说明 | 运行方式 |
 |---|---|---|
-| `test_gb_helper.sh` | 框架级冒烟测试：配置写入/读取/覆盖、敏感项脱敏、token 缓存清除、帮助与错误处理 | `bash tests/test_gb_helper.sh` |
-| `mock_token_test.sh` | Token 链路离线验证：用 mock curl 模拟鉴权响应，验证 获取→解析→缓存→复用→强制刷新 | `bash tests/mock_token_test.sh` |
+本仓库不再实现公贝认证或 HTTP 请求脚本。运行时验证由 `hun` 自身负责，技能层只需检查动作、请求体和响应组织契约。
+
+建议的最小验证：
+
+```powershell
+hun auth status
+hun post gongbei assetStatusList -d '{}'
+```
+
+未登录时先执行 `hun auth login`。第二条命令需要网关已登记 `gongbei/assetStatusList` 动作。
 
 两者均不依赖真实凭证与网络（使用临时 config，测试结束自动清理）。
 

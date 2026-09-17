@@ -6,15 +6,13 @@
 
 让 AI Agent 直接操作【公贝资产开放平台】——无需手写 API 调用，无需手动管理 Token，对话即操作。
 
-基于 [Anthropic skills 规范](https://github.com/anthropics/skills) 构建，**仅依赖 `curl`**，无需安装 Python、SDK 或任何第三方库。安装后 Agent 即可理解"什么时候该调公贝 API、该调哪个、参数怎么填"，并**自动管理配置**、错误处理。
-
-> 📌 **已实现能力**：基于官方文档（https://doc.gongbeiyun.com/web/#/5/640）实现**鉴权链路**与**通用约定**：API_HOST（统一 `https://d-oapi.gongbeiyun.com`）、`getAppToken` 换取 appToken（`?appToken=` 查询参数携带）、统一响应结构、表单字段结构查询与自定义字段（extFields）赋值规则。技能库提供三个模块：**审批&待办中心（gongbei-approval，只读）**：审批实例列表、用户审批待办列表；**资产档案（gongbei-asset，只读）**：资产卡片分页查询、资产状态列表、资产操作记录；**资产申购单（gongbei-requisition，只读）**：申购单分页查询（formType=40，含申请时间/采购总数量/采购总金额/待入库总数量筛选）。其余业务模块（采购/领用/调拨/盘点/维修/报废/报表/基础资料等）当前未纳入技能库，按需接入（接口路径与参数待官方文档公开后补充）。
+基于 [Anthropic skills 规范](https://github.com/anthropics/skills) 构建。技能通过内部 `hun-cli` 网关访问公贝，不直接拼装 HTTP 请求，也不接触 AppKey、AppSecret 或 appToken。认证、凭据存储、令牌刷新、数据权限和错误退出码统一由 hun 处理。
 
 ## 为什么用这个
 
 - **对话即操作**："帮我查一下财务部有哪些在用资产" → Agent 自动完成，无需你知道任何 API
-- **零依赖**：仅使用 `curl` 发起 HTTP 请求，无需安装 Python、SDK 或任何第三方库
-- **一次配置，永久生效**：首次使用时 Agent 统一询问 appKey/appSecret，写入 `~/.gongbei-skills/config`，后续所有技能直接复用，不再重复问
+- **统一网关**：所有业务调用使用 `hun post gongbei <action>`，认证和请求由 hun 统一完成
+- **安全授权**：使用 `hun auth login` 完成授权，Skill 不索取或保存密钥
 
 ## 长期目标
 
@@ -38,10 +36,9 @@ Agent 每次执行任务都需要将技能文件装入上下文，**skill 文件
 
 ### 前置条件
 
-1. 在[公贝资产开放平台](https://doc.gongbeiyun.com/web/#/5/640)创建应用：首页 Logo 右键进入「开放平台」页签 → 新建应用 → 获取应用的 `appKey`、`appSecret`
-2. API_HOST 统一为 `https://d-oapi.gongbeiyun.com`，无需配置（如需覆盖可用 `GONGBEI_BASE_URL` 环境变量）
-3. 准备好应用的 `appKey`、`appSecret`（Agent 会引导你完成配置）
-4. 准备 `GONGBEI_APP_TYPE`（可选应用配置项，逗号分隔多个值，**敏感**；不配置时查询范围不设限）；其值由应用方提供，Agent 仅引导填写，不会展示其含义或用途
+1. 安装并确保 `hun` 在 `PATH` 中。
+2. 执行 `hun auth login` 完成授权；用 `hun auth status` 验证登录状态。
+3. 确认 hun 网关已登记 `gongbei` 应用及各技能参考文档中的动作。
 
 ### 安装技能
 
@@ -62,7 +59,7 @@ npx skills add https://github.com/chensanpi/gongbei-skills.git --skill '*' -a cl
 
 ### 开口说话
 
-安装后，Agent 会在首次运行时检查 `~/.gongbei-skills/config`（含 `GONGBEI_APP_TYPE`），缺什么一次性问清楚，自动写入。之后直接对话：
+安装后，Agent 会先检查 `hun auth status`；需要授权时引导执行 `hun auth login`。之后直接对话：
 
 ```
 "查一下财务部有哪些在用资产"
@@ -128,16 +125,13 @@ npx skills add https://github.com/chensanpi/gongbei-skills.git --skill gongbei-r
 ## 项目结构
 
 ```
-tests/
-├── test_gb_helper.sh         # 框架级冒烟测试（离线）
-└── mock_token_test.sh        # Token 链路离线验证（mock curl）
 .agents/skills/
+├── gongbei-shared/           # hun 认证、调用和错误约定
+│   └── SKILL.md
 ├── gongbei-asset/           # 资产档案
 │   ├── SKILL.md             # 技能主文件（触发条件 + 策略指南 + 工作流程）
-│   ├── scripts/
-│   │   └── gb_helper.sh     # 公贝开放平台辅助工具（配置 + Token）
 │   └── references/
-│       └── api.md           # API 参考（鉴权/通用约定已确认，业务接口待补齐）
+│       └── api.md           # hun 动作、请求体与响应字段
 ├── gongbei-approval/        # 审批&待办中心
 └── gongbei-requisition/     # 资产申购单
 ```
@@ -151,7 +145,6 @@ tests/
 - [公贝资产开放平台文档](https://doc.gongbeiyun.com/web/#/5/640)
 - [公贝资产官网](https://www.gongbeiyun.com)
 - [anthropics/skills 规范](https://github.com/anthropics/skills)
-- [dingtalk-skills（本项目风格参考）](https://github.com/breath57/dingtalk-skills)
 
 ## 许可证
 

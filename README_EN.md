@@ -6,22 +6,22 @@
 
 Let your AI Agent operate the **Gongbei Asset Open Platform (公贝资产开放平台)** directly — no manual API calls, no token management, just conversation.
 
-Built on the [Anthropic skills spec](https://github.com/anthropics/skills), with **zero dependencies — only `curl`** for HTTP requests, no Python, no SDK, nothing extra to install. After installation your agent automatically understands when to call Gongbei APIs, which endpoint to use, and how to fill in the parameters — including **automatic config management** and error handling.
+Built on the [Anthropic skills spec](https://github.com/anthropics/skills). Skills call Gongbei through the internal `hun-cli` gateway; they do not assemble HTTP requests or handle credentials. Authentication, token refresh, data permissions, and error codes are owned by hun.
 
-> 📌 **Implemented capabilities**: Built on the official docs (https://doc.gongbeiyun.com/web/#/5/640), the **auth flow and common conventions** are implemented: API_HOST (unified `https://d-oapi.gongbeiyun.com`), `getAppToken` → `appToken` (sent as `?appToken=` query param), unified response envelope, form-field structure query, and custom field (`extFields`) assignment rules. The skill library provides three modules: **Approval & Todo Center (gongbei-approval, read-only)**: approval instance list, user approval todo list; **Asset registry (gongbei-asset, read-only)**: asset card pagination query, asset status list, asset operation log; **Asset requisition (gongbei-requisition, read-only)**: requisition document pagination query (formType=40, filter by apply time / total purchase qty / total purchase amount / pending-storage qty). Other business modules (procurement/transfer/stocktake/repair/scrap/reports/master data, etc.) are not yet in the skill library — they will be added on demand as their endpoints are published.
+> **Implemented capabilities**: The library provides three read-only modules: approval and todo, asset registry, and asset requisitions. Each skill handles intent routing, parameter extraction and validation, hun action selection, and response organization. Action and field details live in each skill's `references/api.md`.
 
 ## Why use this
 
 - **Talk, don't code**: "Show me the in-use assets of the Finance department" → Agent handles it end-to-end, no API knowledge required
-- **Zero dependencies**: Only `curl` for HTTP requests — no Python, no SDK, no extra languages to install
-- **Configure once, use everywhere**: On first run, the agent collects appKey/appSecret in a single prompt, saves to `~/.gongbei-skills/config`, and reuses across all skills automatically
+- **Unified gateway**: Every business call uses `hun post gongbei <action>`
+- **Managed authorization**: Run `hun auth login`; skills never collect or store secrets
 
 ## Long-term Goals
 
 This project pursues two parallel long-term objectives:
 
-**1. Always only `curl`**
-No SDKs, no runtimes, no third-party dependencies — ever. If the system has `curl`, the skill runs. This guarantees maximum portability and zero-install operation in any agent environment.
+**1. Always use hun**
+Skills do not implement authentication, HTTP requests, or token management. All network access uses hun's gateway and authorization chain.
 
 **2. Push token cost to the absolute minimum**
 Every task execution loads skill files into the agent's context window — **the skill file itself is a cost**. Our goal isn't just correctness; it's writing `SKILL.md` and `references/api.md` as concisely as possible while maintaining full accuracy.
@@ -38,10 +38,9 @@ Every task execution loads skill files into the agent's context window — **the
 
 ### Prerequisites
 
-1. Create an app on the [Gongbei Asset Open Platform](https://doc.gongbeiyun.com/web/#/5/640): right-click the homepage logo → open the "开放平台" tab → create an app → get its `appKey` and `appSecret`
-2. API_HOST is fixed at `https://d-oapi.gongbeiyun.com` — no configuration needed (overridable via the `GONGBEI_BASE_URL` env var)
-3. Prepare your app's `appKey` and `appSecret` — the agent will walk you through the setup
-4. Prepare `GONGBEI_APP_TYPE` (optional app config item, comma-separated values, **sensitive**; when unset, the query scope is not limited); its value is provided by the app side — the agent only guides the user to fill it in and never reveals its meaning or purpose
+1. Install `hun` and make sure it is available on `PATH`.
+2. Run `hun auth login`, then verify with `hun auth status`.
+3. Confirm that the hun gateway has registered the `gongbei` app and the actions listed in the skill references.
 
 ### Install a Skill
 
