@@ -1,6 +1,6 @@
 # 审批与待办 API 参考
 
-认证、网关地址和请求头由 `gongbei-shared` 与 hun-cli 处理。每个动作的 HTTP 方法、请求体和字段以本文件为准。当前两个动作均为：`hun post gongbei <action> -d '<JSON>'`。
+认证、网关地址和请求头由 `gongbei-shared` 与 hun-cli 处理。每个动作的 HTTP 方法、请求体和字段以本文件为准。当前三个动作均为：`hun post gongbei <action> -d '<JSON>'`。
 
 ## 统一响应
 
@@ -26,7 +26,7 @@
 - 人员对象 `startUser`/`user`：`{field,value}`，`field` 支持 `id`、`code`、`name`、`phone`、`email`、`thirdUserId`。
 - 部门对象 `startOrg`：`{field,value}`，`field` 支持 `id`、`code`、`name`、`thirdOrgId`。
 - 时间字段均为 Unix 毫秒时间戳。
-- `filters` 元素为 `{field,compare,value}`。比较符：`eq` 等于、`lk` 模糊、`in` 包含、`ni` 不包含、`bt` 区间、`gt`/`lt` 大于/小于、`ge`/`le` 大于等于/小于等于。
+- `filters` 元素为 `{field,compare,value}`。比较符：`lk` 模糊、`in` 包含、`bt` 区间。
 
 实例状态：`100` 进行中、`200` 已拒绝、`300` 已撤销、`400` 已完结。待办记录状态：`20` 处理中。
 
@@ -97,6 +97,36 @@
 
 列表条目复用审批实例字段，并增加 `record`：`record.id`、`nodeCode`、`status`/`statusName`、`remark`、`startTime`、`userName`、`userCode`。待办处理中的记录通常为 `record.status=20`。
 
+## 3. 审批实例详情
+
+动作：`processInstanceDetail`
+
+用途：按审批实例编码查询单条审批流的完整详情，包括关联单据、审批摘要、评论列表、各节点审批记录及当前状态；只读。
+
+请求体字段：
+
+| 字段 | 类型 | 必选 | 说明 |
+|---|---|---|---|
+| `instanceCode` | string | 是 | 审批实例编码 |
+
+示例：
+
+```json
+{
+  "instanceCode": "gb-0aee7-ba2a-4e0d-ba00-7043df956885"
+}
+```
+
+响应 `data` 为审批实例详情对象，主要字段：
+
+- 实例信息：`instanceCode`、`title`、`status`/`statusName`、`createTime`、`updateTime`、`finishTime`。
+- 发起与关联单据：`startUserId`、`startUserName`、`startUserCode`、`startOrgId`、`startOrgName`、`linkType`、`linkId`、`linkCode`。
+- 审批摘要：`contentJson.type`、`contentJson.contentText`、`contentJson.contentKv[]`，其中每项为 `{key,value}`。
+- 审批评论：`discussList` 评论列表；有评论时原样保留评论对象及其字段，不将空数组误报为有评论。
+- 节点记录：`nodes[]` 的 `code`、`name`、`nodeType` 和 `records[]`；记录包含 `userName`、`status`/`statusName`、`remark`、`startTime`、`finishTime` 等字段。
+
+调用时从用户请求中提取实例编码；缺少实例编码时先向用户索取，不发送空请求体。
+
 ## 响应组织
 
-审批实例提炼 `instanceCode`、`title`、`statusName`、发起人/门店、`contentJson.contentKv`、`linkCode` 和时间；待办额外提炼当前节点处理人和 `record.statusName`。始终报告 `data.total`，失败时使用 `errMsg`，不要展示认证材料。
+审批实例提炼 `instanceCode`、`title`、`statusName`、发起人/门店、`contentJson.contentKv`、`linkCode` 和时间；详情额外展示 `discussList` 评论和按节点归组的审批记录；待办额外提炼当前节点处理人和 `record.statusName`。分页结果始终报告 `data.total`，详情结果不虚构分页总数；失败时使用 `errMsg`，不要展示认证材料。

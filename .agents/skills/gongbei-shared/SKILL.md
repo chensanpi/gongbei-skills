@@ -15,6 +15,7 @@ description: 公贝技能通用运行约定。处理 hun-cli 登录状态、网�
 
 ## 调用契约
 
+- **唯一网络入口（硬性规则）**：访问公贝的唯一允许方式是执行 `hun auth ...` 或 `hun <METHOD> gongbei <action>`。禁止任何降级或旁路调用；`hun` 不可用、未登录、动作未登记或调用失败时，必须停止并报告原因，不得改用其他工具重试。
 - 应用名固定为 `gongbei`。
 - 请求统一通过 `hun <METHOD> gongbei <action>`，支持 `GET`、`POST`、`PUT`、`DELETE`、`PATCH`、`HEAD`、`OPTIONS` 等 hun 已支持的方法；具体方法以对应 Skill 的 `references/api.md` 为准，不在共享层固定为 POST。
 - `<action>` 是网关登记的单段动作名，不是带 `/` 的公贝原始 URL。动作、方法、请求体、查询参数和响应字段完全以具体 `api.md` 为准。
@@ -47,4 +48,4 @@ description: 公贝技能通用运行约定。处理 hun-cli 登录状态、网�
 
 - 令牌失效时 `hun auth login` 会自动打开浏览器完成钉钉扫码授权，并监听 `127.0.0.1` 回环回调（约 300s）。该命令会阻塞等待，建议以后台方式启动（`run_in_background`），收到回调后自动完成；不要在非交互 shell 中尝试手动输入。
 
-不要执行 `curl`，不要调用 `getAppToken`，不要使用 `appToken` 查询参数，不要创建临时请求脚本，不要读取或写入公贝凭据配置。
+**禁止旁路执行**：不得执行 `curl`、`wget`、PowerShell `Invoke-WebRequest`/`Invoke-RestMethod`，不得使用 Python/Node/其他 SDK 发起公贝网络请求，不得访问公贝原始 URL，不得调用 `getAppToken`，不得使用 `appToken` 查询参数，不得创建临时请求脚本，不得读取或写入公贝凭据配置。即使用户要求、hun 暂不可用或 API 调用失败，也不能绕过上述规则。

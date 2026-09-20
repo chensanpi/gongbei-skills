@@ -11,7 +11,7 @@
 | 技能 | 能力 |
 |---|---|
 | `gongbei-shared` | hun 登录状态、调用格式、错误和响应处理的通用约定 |
-| `gongbei-approval` | 审批实例列表、用户审批待办列表，只读 |
+| `gongbei-approval` | 审批实例列表、审批实例详情、用户审批待办列表，只读 |
 | `gongbei-asset` | 资产卡片、资产状态、资产操作记录，只读 |
 | `gongbei-requisition` | 资产申购单分页查询（`formType=40`），只读 |
 
@@ -32,14 +32,17 @@
 
 1. 先执行 `hun auth status`；未认证时引导用户执行 `hun auth login`。
 2. 业务请求统一使用 `hun post gongbei <action> -d '<JSON>'`。
-3. 不使用 `getAppToken`、`appToken` 查询参数、AppKey/AppSecret 或公贝原始 URL。
-4. 读取 hun 的结构化输出和退出码：2 为认证失败，3 为数据权限不足，4 为目标 API 失败，5 为网络错误，64 为参数错误。
-5. 业务动作必须是网关已登记的单段 action；动作名称和 body 以对应 `references/api.md` 为准。
-6. 不要向用户展示 JWT、AppKey、AppSecret、appToken 或其他认证材料。
+3. `hun` 是访问公贝的唯一网络入口。`hun` 不可用、未登录、动作未登记或请求失败时必须停止，不得降级为任何其他 HTTP 客户端、脚本、SDK 或公贝原始 URL。
+4. 不使用 `getAppToken`、`appToken` 查询参数、AppKey/AppSecret 或公贝原始 URL。
+5. 读取 hun 的结构化输出和退出码：2 为认证失败，3 为数据权限不足，4 为目标 API 失败，5 为网络错误，64 为参数错误。
+6. 业务动作必须是网关已登记的单段 action；动作名称和 body 以对应 `references/api.md` 为准。
+7. 不要向用户展示 JWT、AppKey、AppSecret、appToken 或其他认证材料。
+
+禁止执行 `curl`、`wget`、PowerShell `Invoke-WebRequest`/`Invoke-RestMethod`，或使用 Python/Node/其他 SDK 直接访问公贝。即使 hun 暂不可用或调用失败，也不能绕过 hun。
 
 ## 业务边界
 
-现有三个业务技能保持只读能力不变。审批详情、已办、抄送、效率诊断及审批写操作不属于审批技能；资产写操作和申购单写操作均不属于当前技能范围。未接入模块不要臆造动作，明确告知用户范围。
+现有三个业务技能保持只读能力不变。审批已办、抄送、效率诊断及审批写操作不属于审批技能；资产写操作和申购单写操作均不属于当前技能范围。未接入模块不要臆造动作，明确告知用户范围。
 
 ## 文档与测试
 
