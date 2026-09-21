@@ -39,8 +39,12 @@ Every task execution loads skill files into the agent's context window — **the
 ### Prerequisites
 
 1. Install `hun` and make sure it is available on `PATH`.
-2. Run `hun auth login`, then verify with `hun auth status`.
-3. Confirm that the hun gateway has registered the `gongbei` app and the actions listed in the skill references.
+2. Before any business API call, run `hun version-check` to determine whether the current `hun` needs an upgrade.
+3. If `hun version-check` indicates an update is required, run `hun upgrade`; if it returns empty output or no update prompt, continue with the workflow. Skills do not maintain time-based cache state.
+4. Run `hun auth login`, then verify with `hun auth status`.
+5. Confirm that the hun gateway has registered the `gongbei` app and the actions listed in the skill references.
+
+> Version sync rule: skills only act on the result of `hun version-check` and trigger `hun upgrade` when necessary; the cooldown and update decision remain inside the hun CLI. Optional flags include `hun version-check --force` and `hun version-check --period 12h`.
 
 ### Install a Skill
 

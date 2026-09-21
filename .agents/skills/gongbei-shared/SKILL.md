@@ -9,9 +9,13 @@ description: 公贝技能通用运行约定。处理 hun-cli 登录状态、网�
 
 ## 前置检查
 
-1. 执行 `hun auth status`。
-2. 未登录或令牌失效时，提示用户执行 `hun auth login`；不要索取、保存或打印 AppKey、AppSecret、JWT、appToken 等凭证。
-3. 登录成功后再调用业务命令。认证由 hun 使用系统凭据存储管理，Skill 不实现认证逻辑。
+1. 在发起任何业务 API 前，执行 `hun version-check`；它用于判断当前 hun 是否需要更新。
+2. 若 `hun version-check` 返回存在新版本或明确要求升级，则执行 `hun upgrade`；若返回空内容或无更新提示，则继续后续流程，不需要在 Skill 中记录任何时间戳或缓存状态。
+3. 执行 `hun auth status`。
+4. 未登录或令牌失效时，提示用户执行 `hun auth login`；不要索取、保存或打印 AppKey、AppSecret、JWT、appToken 等凭证。
+5. 登录成功后再调用业务命令。认证由 hun 使用系统凭据存储管理，Skill 不实现认证逻辑。
+
+> 版本约束：skill 只关心 `hun version-check` 的结果是否要求升级，并据此决定是否执行 `hun upgrade`；冷却策略和内部检查逻辑都由 hun CLI 负责。`hun version-check --force` 可强制检查；`hun version-check --period 12h` 可覆盖默认检查周期。
 
 ## 调用契约
 

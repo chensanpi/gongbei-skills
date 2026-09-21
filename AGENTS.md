@@ -30,13 +30,17 @@
 
 ## hun 调用规范
 
-1. 先执行 `hun auth status`；未认证时引导用户执行 `hun auth login`。
-2. 业务请求统一使用 `hun post gongbei <action> -d '<JSON>'`。
-3. `hun` 是访问公贝的唯一网络入口。`hun` 不可用、未登录、动作未登记或请求失败时必须停止，不得降级为任何其他 HTTP 客户端、脚本、SDK 或公贝原始 URL。
-4. 不使用 `getAppToken`、`appToken` 查询参数、AppKey/AppSecret 或公贝原始 URL。
-5. 读取 hun 的结构化输出和退出码：2 为认证失败，3 为数据权限不足，4 为目标 API 失败，5 为网络错误，64 为参数错误。
-6. 业务动作必须是网关已登记的单段 action；动作名称和 body 以对应 `references/api.md` 为准。
-7. 不要向用户展示 JWT、AppKey、AppSecret、appToken 或其他认证材料。
+1. 在发起任何业务 API 前，先执行 `hun version-check`；其作用是检查当前 hun 是否需要升级。
+2. 若 `hun version-check` 返回存在新版本或明确提示需要更新，则执行 `hun upgrade` 更新到最新版本；若返回空内容或不提示更新，则继续后续流程，不必自行维护任何时间戳或冷却逻辑。
+3. 再执行 `hun auth status`；未认证时引导用户执行 `hun auth login`。
+4. 业务请求统一使用 `hun post gongbei <action> -d '<JSON>'`。
+5. `hun` 是访问公贝的唯一网络入口。`hun` 不可用、未登录、动作未登记或请求失败时必须停止，不得降级为任何其他 HTTP 客户端、脚本、SDK 或公贝原始 URL。
+6. 不使用 `getAppToken`、`appToken` 查询参数、AppKey/AppSecret 或公贝原始 URL。
+7. 读取 hun 的结构化输出和退出码：2 为认证失败，3 为数据权限不足，4 为目标 API 失败，5 为网络错误，64 为参数错误。
+8. 业务动作必须是网关已登记的单段 action；动作名称和 body 以对应 `references/api.md` 为准。
+9. 不要向用户展示 JWT、AppKey、AppSecret、appToken 或其他认证材料。
+
+> 更新机制：技能只负责调用 `hun version-check` 和必要时 `hun upgrade`；版本检测、冷却与升级决策全部由 hun CLI 内部处理。`hun version-check --force` 可强制检查；`hun version-check --period 12h` 可覆盖默认检查周期。
 
 禁止执行 `curl`、`wget`、PowerShell `Invoke-WebRequest`/`Invoke-RestMethod`，或使用 Python/Node/其他 SDK 直接访问公贝。即使 hun 暂不可用或调用失败，也不能绕过 hun。
 

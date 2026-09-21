@@ -37,8 +37,12 @@ Agent 每次执行任务都需要将技能文件装入上下文，**skill 文件
 ### 前置条件
 
 1. 安装并确保 `hun` 在 `PATH` 中。
-2. 执行 `hun auth login` 完成授权；用 `hun auth status` 验证登录状态。
-3. 确认 hun 网关已登记 `gongbei` 应用及各技能参考文档中的动作。
+2. 在发起任何业务 API 前，执行 `hun version-check`，用它判断当前 hun 是否需要升级。
+3. 若 `hun version-check` 返回需要更新，则执行 `hun upgrade`；若返回空内容或无更新提示，则继续后续流程，不需要在 skill 中记录时间戳或缓存状态。
+4. 执行 `hun auth login` 完成授权；用 `hun auth status` 验证登录状态。
+5. 确认 hun 网关已登记 `gongbei` 应用及各技能参考文档中的动作。
+
+> 版本同步策略：技能只关心 `hun version-check` 的结果是否要求升级，并据此决定是否执行 `hun upgrade`；冷却策略、内部检查和升级决策都由 hun CLI 自己处理。可选参数包括 `hun version-check --force` 和 `hun version-check --period 12h`。
 
 ### 安装技能
 
