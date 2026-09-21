@@ -122,7 +122,7 @@
 - 实例信息：`instanceCode`、`title`、`status`/`statusName`、`createTime`、`updateTime`、`finishTime`。
 - 发起与关联单据：`startUserId`、`startUserName`、`startUserCode`、`startOrgId`、`startOrgName`、`linkType`、`linkId`、`linkCode`。
 - 审批摘要：`contentJson.type`、`contentJson.contentText`、`contentJson.contentKv[]`，其中每项为 `{key,value}`。
-- 审批评论：`discussList` 评论列表；有评论时原样保留评论对象及其字段，不将空数组误报为有评论。
+- 审批评论：`discussList` 评论列表；有评论时原样保留评论对象及其字段，不将空数组误报为有评论。评论中存在图片链接（photoUrls）时，需要原样展示给用户。
 - 节点记录：`nodes[]` 的 `code`、`name`、`nodeType` 和 `records[]`；记录包含 `userName`、`status`/`statusName`、`remark`、`startTime`、`finishTime` 等字段。
 
 调用时从用户请求中提取实例编码；缺少实例编码时先向用户索取，不发送空请求体。
