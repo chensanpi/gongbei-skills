@@ -30,7 +30,8 @@ Agent 每次执行任务都需要将技能文件装入上下文，**skill 文件
 |---|---|---|
 | [gongbei-asset](#gongbei-asset--资产档案) | ✅ 已上线 | 资产档案（只读）：资产卡片查询、资产状态列表、资产操作记录 |
 | [gongbei-approval](#gongbei-approval--审批待办中心) | ✅ 已上线 | 审批&待办中心（只读）：审批实例列表、用户审批待办列表 |
-| [gongbei-requisition](#gongbei-requisition--资产申购单) | ✅ 已上线 | 资产申购单（只读）：申购单分页查询（formType=40） |
+| [gongbei-asset-order](#gongbei-asset-order--资产单据通用) | ✅ 已上线 | 资产单据通用（只读）：12 类单据分页查询、关联单据编号查看 |
+| [gongbei-requisition](#gongbei-requisition--资产申购单) | ✅ 已上线 | 资产申购单（只读）：申购单分页查询（formType=40）与专属扩展字段 |
 
 ## 快速开始
 
@@ -69,6 +70,8 @@ npx skills add https://github.com/chensanpi/gongbei-skills.git --skill '*' -a cl
 "查一下财务部有哪些在用资产"
 "查 GB-00040 这台资产的操作记录"
 "最近有哪些资产申购单？"
+"这个月的调拨单有哪些？"
+"ZCRK202209160001 关联了哪些单据？"
 "我有哪些待办审批？"
 ```
 
@@ -118,11 +121,31 @@ npx skills add https://github.com/chensanpi/gongbei-skills.git --skill gongbei-r
 
 | 能力 | 说明 |
 |---|---|
-| 查询资产申购单 ✅ | 分页查询（formType=40），通用筛选（编码/状态/发起人/部门/关联单号/审批实例）+ 申购单专属筛选（申请时间/采购总数量/采购总金额/待入库总数量），明细含资产快照（分类/位置/管理员/品牌/型号/序列号） |
+| 查询资产申购单 ✅ | 分页查询（formType=40），通用筛选（编码/状态/发起人/部门/关联单号/审批实例）+ 申购单专属筛选（申请时间/申购总数量/申购总金额/待入库总数量），明细含资产快照（分类/位置/管理员/品牌/型号/序列号） |
+| 申购单扩展字段 ✅ | 申购单特有的 `extFields`：`text029` 具体说明、`text034` 资产分类、`text042` 申请原因、`text046` 部门现有资产（其他单据类型没有这些扩展字段） |
+| 关联单据查看 ✅ | 读表头 `linkOrderCode` 与单据头 `orderFields.relatedOrderId`/`formType`；可按单据编号反查，或用入库单（`formType=2`）的 `orderFields.relatedOrderId` 查这张申购单后续产生的单据 |
 
-> 本技能**只读**：仅提供申购单查询；新增/删除/更新申购单及申购统计请引导用户在公贝系统中处理。
+> 本技能**只读**：仅提供申购单查询与其关联单据查看；新增/删除/更新申购单及申购统计请引导用户在公贝系统中处理。
 
-> 示例："查一下最近 3 个月的资产申购单" → Agent 按 formType=40 + orderFields.operateTime 时间范围查询并汇总状态。
+> 示例："查一下最近 3 个月的资产申购单" → Agent 按 formType=40 + orderFields.operateTime 时间范围查询并汇总状态；"ZCRK202209160001 这张申购单关联了哪些单据？" → Agent 读 `linkOrderCode`/`relatedOrderId` 并用 `linkOrderCode` 或 `orderFields.relatedOrderId` 过滤反查。
+
+### gongbei-asset-order — 资产单据（通用）
+
+**安装**
+```bash
+npx skills add https://github.com/chensanpi/gongbei-skills.git --skill gongbei-asset-order
+```
+
+| 能力 | 说明 |
+|---|---|
+| 查询资产单据 ✅ | 分页查询 `asset-order/page`（动作 `assetOrderPage`），`formType` 指定单据类型：2 入库单、3 借用单、4 归还单、5 派发单、6 退库单、7 调拨单、8 维修单、9 处置单、10 批量修改单、31 领用申请单、34 资产报修单、36 资产退还单 |
+| 通用筛选 ✅ | 单据编码/状态/发起人/部门/关联单据编号/备注/审批实例 + 单据明细资产快照（资产编码/名称/分类/位置/管理员/公司/品牌/型号/序列号） |
+| 单据类型专属筛选 ✅ | 各类型的处理人、时间、部门/位置/公司、金额数量等专属字段，按 `formType` 取用 |
+| 关联单据编号 ✅ | 读取表头 `linkOrderCode` 与 `orderFields` 关联字段（如入库单 `relatedOrderId`、派发单 `receiveCode`/`receiveId`），并可用 `linkOrderCode` 反查关联单据 |
+
+> 本技能**只读**：仅提供资产单据查询与关联单据编号查看；单据新增/修改/删除/审批/导出请引导用户在公贝系统中处理。审批进度用 `gongbei-approval`。
+
+> 示例："查一下这个月的调拨单" → Agent 按 formType=7 + orderFields.outTime 时间范围查询；"ZCRK202209160001 关联了哪些单据？" → Agent 读 `linkOrderCode` 并用 `linkOrderCode` 过滤反查。
 
 ---
 
@@ -137,6 +160,7 @@ npx skills add https://github.com/chensanpi/gongbei-skills.git --skill gongbei-r
 │   └── references/
 │       └── api.md           # hun 动作、请求体与响应字段
 ├── gongbei-approval/        # 审批&待办中心
+├── gongbei-asset-order/     # 资产单据（通用）
 └── gongbei-requisition/     # 资产申购单
 ```
 

@@ -32,7 +32,8 @@ Every task execution loads skill files into the agent's context window — **the
 |---|---|---|
 | [gongbei-asset](#gongbei-asset--asset-registry) | ✅ Live | Asset registry (read-only): asset card query, status list, operation log |
 | [gongbei-approval](#gongbei-approval--approval--todo-center) | ✅ Live | Approval & Todo Center (read-only): approval instance list, user todo list |
-| [gongbei-requisition](#gongbei-requisition--asset-requisition) | ✅ Live | Asset requisition (read-only): requisition document pagination query (formType=40) |
+| [gongbei-asset-order](#gongbei-asset-order--asset-orders-generic) | ✅ Live | Asset orders, generic (read-only): paginated query across 12 order types, linked order code lookup |
+| [gongbei-requisition](#gongbei-requisition--asset-requisition) | ✅ Live | Asset requisition (read-only): requisition document pagination query (formType=40) with dedicated ext fields |
 
 ## Quick Start
 
@@ -120,11 +121,31 @@ npx skills add https://github.com/chensanpi/gongbei-skills.git --skill gongbei-r
 
 | Capability | Description |
 |---|---|
-| Query asset requisitions ✅ | Paginated query (formType=40), common filters (code/status/initiator/dept/linked order/approval instance) + requisition-specific filters (apply time / total purchase qty / total purchase amount / pending-storage qty); line items carry asset snapshots (category/location/admin/brand/model/SN) |
+| Query asset requisitions ✅ | Paginated query (formType=40), common filters (code/status/initiator/dept/linked order/approval instance) + requisition-specific filters (apply time / total requisition qty / total requisition amount / pending-storage qty); line items carry asset snapshots (category/location/admin/brand/model/SN) |
+| Requisition ext fields ✅ | Requisition-only `extFields`: `text029` description, `text034` asset category, `text042` apply reason, `text046` dept existing assets (no other order type has these ext fields) |
+| Linked documents ✅ | Read header `linkOrderCode` and header fields `orderFields.relatedOrderId`/`formType`; reverse-look-up by order code, or query stock-in orders (`formType=2`) by `orderFields.relatedOrderId` to find documents produced from this requisition |
 
-> This skill is **read-only**: only requisition document queries; creating/updating/deleting requisitions and requisition statistics are handled in the Gongbei console.
+> This skill is **read-only**: only requisition queries and linked document lookup; creating/updating/deleting requisitions and requisition statistics are handled in the Gongbei console.
 
-> Example: "Show me asset requisitions from the last 3 months" → Agent queries with formType=40 + `orderFields.operateTime` range and summarizes statuses.
+> Example: "Show me asset requisitions from the last 3 months" → Agent queries with formType=40 + `orderFields.operateTime` range and summarizes statuses; "What is ZCRK202209160001 linked to?" → Agent reads `linkOrderCode`/`relatedOrderId` and reverse-queries with a `linkOrderCode` or `orderFields.relatedOrderId` filter.
+
+### gongbei-asset-order — Asset Orders (Generic)
+
+**Install**
+```bash
+npx skills add https://github.com/chensanpi/gongbei-skills.git --skill gongbei-asset-order
+```
+
+| Capability | Description |
+|---|---|
+| Query asset orders ✅ | Paginated query of `asset-order/page` (action `assetOrderPage`); `formType` selects the order type: 2 stock-in, 3 borrow, 4 return, 5 distribute, 6 de-stock, 7 transfer, 8 repair, 9 disposal, 10 bulk update, 31 requisition-of-use application, 34 repair request, 36 asset give-back |
+| Common filters ✅ | Order code/status/initiator/dept/linked order code/remark/approval instance + line-item asset snapshots (code/name/category/location/admin/company/brand/model/SN) |
+| Type-specific filters ✅ | Per-type handler, time, dept/location/company, amounts and quantities, selected by `formType` |
+| Linked order code ✅ | Read header `linkOrderCode` and `orderFields` link fields (e.g. stock-in `relatedOrderId`, distribute `receiveCode`/`receiveId`), and reverse-look-up related orders by `linkOrderCode` |
+
+> This skill is **read-only**: only asset order queries and linked order code lookup; creating/updating/deleting/approving/exporting orders is handled in the Gongbei console. Use `gongbei-approval` for approval progress.
+
+> Example: "Show me this month's transfer orders" → Agent queries formType=7 with an `orderFields.outTime` range; "What is ZCRK202209160001 linked to?" → Agent reads `linkOrderCode` and reverse-queries with a `linkOrderCode` filter.
 
 ---
 
@@ -142,6 +163,7 @@ tests/
 │   └── references/
 │       └── api.md           # API reference (auth/common conventions confirmed; business endpoints pending)
 ├── gongbei-approval/        # Approval & Todo Center
+├── gongbei-asset-order/     # Asset orders (generic)
 └── gongbei-requisition/     # Asset requisition
 ```
 
